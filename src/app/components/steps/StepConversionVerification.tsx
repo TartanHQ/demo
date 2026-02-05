@@ -6,7 +6,7 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import StepCard from "@/app/components/layout/StepCard";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, CreditCard, Globe, Loader2 } from "lucide-react";
 
 type VerificationMethod = "debit" | "netbanking";
 
@@ -47,10 +47,21 @@ export default function StepConversionVerification() {
   };
 
   return (
-    <StepCard step={stepLabel} maxWidth="2xl">
+    <StepCard step={stepLabel} maxWidth="3xl">
       <div className="page-header">
-        <h1 className="page-title">Verify Account</h1>
-        <p className="page-subtitle">Verify the selected account to continue.</p>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h1 className="page-title">Verify Yourself</h1>
+            <p className="page-subtitle">Select an option to confirm your identity.</p>
+          </div>
+          <div className="rounded-[var(--radius)] border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            Relax! No money will be debited from your account, this is for verification purposes only.
+          </div>
+        </div>
+        <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold px-3 py-1">
+          Expires in: 03:24 mins
+        </div>
       </div>
 
       {verified ? (
@@ -69,8 +80,8 @@ export default function StepConversionVerification() {
           </div>
         </div>
       ) : (
-        <div className="space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-3">
             <button
               type="button"
               onClick={() => {
@@ -78,12 +89,27 @@ export default function StepConversionVerification() {
                 setShowErrors(false);
               }}
               className={[
-                "h-11 rounded-[var(--radius)] border px-4 text-sm font-semibold transition-colors text-left",
-                method === "debit" ? "bg-[#004C8F] text-white border-[#004C8F]" : "bg-white text-slate-900 border-slate-200 hover:bg-slate-50",
+                "w-full rounded-[var(--radius-lg)] border p-4 text-left transition-colors flex items-center gap-3",
+                method === "debit" ? "border-[#004C8F] bg-blue-50/40" : "border-slate-200 bg-white hover:bg-slate-50",
               ].join(" ")}
             >
-              Verify with Debit Card
+              <div className="h-10 w-10 rounded-full bg-violet-50 flex items-center justify-center">
+                <CreditCard className="w-5 h-5 text-violet-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-900">Debit Card</p>
+                <p className="text-xs text-slate-500">Requires last 4 digits, expiry date & PIN</p>
+              </div>
+              <div
+                className={[
+                  "h-5 w-5 rounded-full border-2 flex items-center justify-center",
+                  method === "debit" ? "border-[#004C8F]" : "border-slate-300",
+                ].join(" ")}
+              >
+                <div className={["h-2.5 w-2.5 rounded-full", method === "debit" ? "bg-[#004C8F]" : "bg-transparent"].join(" ")} />
+              </div>
             </button>
+
             <button
               type="button"
               onClick={() => {
@@ -91,89 +117,104 @@ export default function StepConversionVerification() {
                 setShowErrors(false);
               }}
               className={[
-                "h-11 rounded-[var(--radius)] border px-4 text-sm font-semibold transition-colors text-left",
-                method === "netbanking"
-                  ? "bg-slate-900 text-white border-slate-900"
-                  : "bg-white text-slate-900 border-slate-200 hover:bg-slate-50",
+                "w-full rounded-[var(--radius-lg)] border p-4 text-left transition-colors flex items-center gap-3",
+                method === "netbanking" ? "border-[#004C8F] bg-blue-50/40" : "border-slate-200 bg-white hover:bg-slate-50",
               ].join(" ")}
             >
-              Verify with Netbanking
+              <div className="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center">
+                <Globe className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-900">Net Banking</p>
+                <p className="text-xs text-slate-500">Requires password/MPIN</p>
+              </div>
+              <div
+                className={[
+                  "h-5 w-5 rounded-full border-2 flex items-center justify-center",
+                  method === "netbanking" ? "border-[#004C8F]" : "border-slate-300",
+                ].join(" ")}
+              >
+                <div
+                  className={["h-2.5 w-2.5 rounded-full", method === "netbanking" ? "bg-[#004C8F]" : "bg-transparent"].join(" ")}
+                />
+              </div>
             </button>
           </div>
 
-          {method === "debit" ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">Last 4 digits of your card</label>
+          <div className="lg:col-span-2 rounded-[var(--radius-lg)] border border-slate-200 bg-white p-5 space-y-4">
+            {method === "debit" ? (
+              <>
+                <p className="text-base font-semibold text-slate-900">Enter Debit Card Details</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
                     value={cardLast4}
                     onChange={(e) => setCardLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
                     className={`enterprise-input ${showErrors && !cardLast4 ? "error" : ""}`}
-                    placeholder="1234"
+                    placeholder="Last 4 digits of your card"
                     inputMode="numeric"
                   />
-                </div>
-                <div>
-                  <label className="form-label">Expiry date</label>
                   <Input
                     type="month"
                     value={cardExpiry}
                     onChange={(e) => setCardExpiry(e.target.value)}
                     className={`enterprise-input ${showErrors && !cardExpiry ? "error" : ""}`}
+                    placeholder="Expiry Date"
                   />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="form-label">PIN</label>
                   <Input
                     type="password"
                     value={cardPin}
                     onChange={(e) => setCardPin(e.target.value)}
                     className={`enterprise-input ${showErrors && !cardPin ? "error" : ""}`}
-                    placeholder="••••"
+                    placeholder="PIN"
                   />
                 </div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <label className="form-label">Customer ID</label>
-                <Input
-                  value={netbankingId}
-                  onChange={(e) => setNetbankingId(e.target.value)}
-                  className={`enterprise-input ${showErrors && !netbankingId ? "error" : ""}`}
-                  placeholder="Enter customer ID"
-                />
-              </div>
-            </div>
-          )}
+              </>
+            ) : (
+              <>
+                <p className="text-base font-semibold text-slate-900">Login to NetBanking</p>
+                <div>
+                  <label className="form-label">Customer ID</label>
+                  <Input
+                    value={netbankingId}
+                    onChange={(e) => setNetbankingId(e.target.value)}
+                    className={`enterprise-input ${showErrors && !netbankingId ? "error" : ""}`}
+                    placeholder="Customer ID"
+                  />
+                </div>
+              </>
+            )}
 
-          <label className="flex items-center gap-2 text-xs font-semibold text-gray-800 cursor-pointer select-none">
-            <Checkbox
-              checked={termsAccepted}
-              onCheckedChange={(v) => setTermsAccepted(v === true)}
-              className="rounded-[var(--radius)] border-gray-300 data-[state=checked]:bg-[#004C8F] data-[state=checked]:border-[#004C8F]"
-            />
-            I accept the Terms & Conditions for verification.
-          </label>
+            <label className="flex items-center gap-2 text-xs font-semibold text-gray-800 cursor-pointer select-none">
+              <Checkbox
+                checked={termsAccepted}
+                onCheckedChange={(v) => setTermsAccepted(v === true)}
+                className="rounded-[var(--radius)] border-gray-300 data-[state=checked]:bg-[#004C8F] data-[state=checked]:border-[#004C8F]"
+              />
+              I agree to the Terms & Conditions described in the notice here.
+            </label>
 
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" className="h-10 px-4" onClick={prevStep}>
-              Cancel
-            </Button>
-            <Button type="button" className="btn-primary h-10 px-4" onClick={handleVerify} disabled={isVerifying}>
-              {isVerifying ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Verifying...
-                </span>
-              ) : method === "debit" ? (
-                "Verify"
-              ) : (
-                "Login and verify"
-              )}
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button type="button" variant="outline" className="h-11 px-6" onClick={prevStep}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="btn-primary h-11 px-6"
+                onClick={handleVerify}
+                disabled={isVerifying || !isFormValid}
+              >
+                {isVerifying ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Verifying...
+                  </span>
+                ) : method === "debit" ? (
+                  "Verify"
+                ) : (
+                  "Login to Verify"
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}

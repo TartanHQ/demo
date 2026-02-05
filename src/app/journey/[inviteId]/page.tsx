@@ -12,7 +12,7 @@ import { parseInviteToken } from "@/lib/inviteToken";
 
 type InviteApiResponse = {
   id: string;
-  journeyType: "ntb" | "etb-nk" | "etb" | "journey2";
+  journeyType: "ntb" | "ntb-conversion" | "etb-nk" | "etb";
   employee: { id: string; name: string; email: string; phone?: string };
   prefilledData: Record<string, unknown>;
   status: "sent" | "opened" | "started" | "completed";

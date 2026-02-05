@@ -19,10 +19,9 @@ import StepAutoConversion from "@/app/components/steps/StepAutoConversion";
 import StepEtbKycProfile from "@/app/components/steps/StepEtbKycProfile";
 import StepConversionVerification from "@/app/components/steps/StepConversionVerification";
 
-import StepLoanOffer from "@/app/components/steps/StepLoanOffer";
 
 export type UserType = "ntb" | "etb-nk" | "etb";
-export type JourneyType = "ntb" | "ntb-lite" | "ntb-conversion" | "etb-nk" | "etb" | "journey2";
+export type JourneyType = "ntb" | "ntb-conversion" | "etb-nk" | "etb";
 
 export interface Step {
   id: string;
@@ -47,7 +46,6 @@ export const ALL_STEPS: Record<string, Step> = {
   accountConversion: { id: "accountConversion", title: "Verify Details" },
   professionalDetailsExpress: { id: "professionalDetailsExpress", title: "Your Profile" },
   complete: { id: "complete", title: "Submitted" },
-  loanOffer: { id: "loanOffer", title: "Loan Offer" },
 };
 
 export const STEP_COMPONENTS: Record<string, React.ComponentType> = {
@@ -68,5 +66,4 @@ export const STEP_COMPONENTS: Record<string, React.ComponentType> = {
   physicalKyc: StepPhysicalKyc,
   accountConversion: StepAccountConversion,
   professionalDetailsExpress: StepProfessionalDetailsExpress,
-  loanOffer: StepLoanOffer,
 };

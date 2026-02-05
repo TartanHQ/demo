@@ -67,22 +67,16 @@ const getInitialStepsForJourney = (journeyType: JourneyType): Step[] => {
       // KYC choice is mandatory; nominee step becomes conditional.
       stepIds = ["welcome", "kycChoice", "ekycHandler", "profileDetails", "reviewApplication", "videoKyc", "complete"];
       break;
-    case "ntb-lite": // NTB flow without Video KYC
-      stepIds = ["welcome", "kycChoice", "ekycHandler", "profileDetails", "reviewApplication", "complete"];
-      break;
     case "ntb-conversion": // NTB flow after auto-conversion (no OTP, no eKYC, no Video KYC)
       stepIds = ["welcome", "kycChoice", "profileDetails", "reviewApplication", "complete"];
       break;
-    case "etb-nk": // Existing to Bank - No KYC
-      // ETB with KYC: No personal details, no nominee, no Video KYC. Still allow Digital vs Physical KYC.
-      stepIds = ["welcome", "kycChoice", "ekycHandler", "etbKycProfile", "complete"];
+    case "etb-nk": // Existing to Bank - With KYC
+      // ETB with KYC: Replace e-KYC step with verification, keep rest unchanged.
+      stepIds = ["welcome", "kycChoice", "conversionVerification", "etbKycProfile", "complete"];
       break;
     case "etb": // Express Flow
       // ETB Auto Conversion: KYC already complete. Only consent to convert Savings → Salary, then done.
       stepIds = ["welcome", "autoConversion", "etbKycProfile", "conversionVerification", "complete"];
-      break;
-    case "journey2": // Loan Offer Journey
-      stepIds = ["welcome", "loanOffer", "reviewApplication", "complete"];
       break;
   }
 

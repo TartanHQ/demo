@@ -5,7 +5,7 @@ import Image from "next/image";
 import { HelpCircle, Settings2, Globe, Shield, CreditCard, Calendar, ArrowLeft } from "lucide-react";
 import { useBranding } from "@/app/context/BrandingContext";
 import { useJourney } from "@/app/context/JourneyContext";
-import StepChipsProgress from "./StepChipsProgress";
+import JourneyProgressBar from "./JourneyProgressBar";
 import WhitelabelModal from "../shared/WhitelabelModal";
 import { cn } from "@/lib/utils";
 import hdfcLogoPng from "../../../../assets/hdfclogo.png";
@@ -144,8 +144,8 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                         }}
                     >
                         <div className="h-full px-4 md:px-6 lg:px-10 flex items-center">
-                            <div className="w-full md:max-w-6xl md:mx-auto flex justify-start md:justify-center">
-                                <StepChipsProgress />
+                            <div className="w-full md:max-w-4xl md:mx-auto">
+                                <JourneyProgressBar />
                             </div>
                         </div>
                     </div>

@@ -71,7 +71,7 @@ const mapAddressFieldsToNominee = (address: AddressFields) => ({
 export default function StepCombinedDetails() {
   const { nextStep, formData, updateFormData, setNomineeEnabled, setBottomBarContent, journeySteps, currentStepIndex, journeyType } =
     useJourney();
-  const isNtb = journeyType === "ntb" || journeyType === "ntb-lite" || journeyType === "ntb-conversion";
+  const isNtb = journeyType === "ntb" || journeyType === "ntb-conversion";
   const isNtbConversion = journeyType === "ntb-conversion";
 
   const [email] = useState(formData.email || "");

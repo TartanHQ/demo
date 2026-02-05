@@ -28,7 +28,7 @@ export default function StepReviewApplication() {
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [editState, setEditState] = useState<Record<string, boolean>>({});
     const [drafts, setDrafts] = useState<Record<string, Record<string, any>>>({});
-    const isNtb = journeyType === "ntb" || journeyType === "ntb-lite" || journeyType === "ntb-conversion";
+    const isNtb = journeyType === "ntb" || journeyType === "ntb-conversion";
     const hideBooleanChanges = journeyType === "etb";
 
     useEffect(() => {
@@ -148,7 +148,7 @@ export default function StepReviewApplication() {
         const hasChanged = (key: string) => changedFields.includes(key);
         const items: ReviewItem[] = [];
 
-        if (hasChanged("email") || hasChanged("communicationEmail") || hasChanged("usesPrimaryEmailForComms")) {
+        if (hasChanged("communicationEmail")) {
             items.push({
                 id: "statementEmail",
                 label: "Statement & Notification Email",
@@ -300,7 +300,6 @@ export default function StepReviewApplication() {
             "communicationAddressCity",
             "communicationAddressState",
             "communicationAddressPincode",
-            "sameAsPermanentAddress",
         ];
         if (communicationFields.some((key) => hasChanged(key))) {
             const communicationAddressValue = formData.sameAsPermanentAddress
@@ -320,7 +319,6 @@ export default function StepReviewApplication() {
                 label: "Communication Address",
                 value: communicationAddressValue || "—",
                 getDraft: () => ({
-                    sameAsPermanentAddress: formData.sameAsPermanentAddress !== false,
                     line1: formData.communicationAddressLine1 || "",
                     line2: formData.communicationAddressLine2 || "",
                     line3: formData.communicationAddressLine3 || "",
@@ -330,173 +328,82 @@ export default function StepReviewApplication() {
                 }),
                 renderEdit: (draft, setDraft) => (
                     <div className="space-y-3">
-                        <label className="flex items-center gap-2 text-xs font-semibold text-gray-800 cursor-pointer select-none">
-                            <Checkbox
-                                checked={draft.sameAsPermanentAddress === true}
-                                onCheckedChange={(v) => setDraft({ ...draft, sameAsPermanentAddress: v === true })}
-                                className="rounded-[var(--radius)] border-gray-300 data-[state=checked]:bg-[#004C8F] data-[state=checked]:border-[#004C8F]"
-                            />
-                            Communication address is same as permanent
-                        </label>
-                        {!draft.sameAsPermanentAddress && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div className="md:col-span-2">
-                                    <Input
-                                        value={draft.line1 || ""}
-                                        onChange={(e) => setDraft({ ...draft, line1: e.target.value })}
-                                        className="enterprise-input"
-                                        placeholder="Line 1"
-                                    />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <Input
-                                        value={draft.line2 || ""}
-                                        onChange={(e) => setDraft({ ...draft, line2: e.target.value })}
-                                        className="enterprise-input"
-                                        placeholder="Line 2"
-                                    />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <Input
-                                        value={draft.line3 || ""}
-                                        onChange={(e) => setDraft({ ...draft, line3: e.target.value })}
-                                        className="enterprise-input"
-                                        placeholder="Line 3"
-                                    />
-                                </div>
-                                <div>
-                                    <Input
-                                        value={draft.city || ""}
-                                        onChange={(e) => setDraft({ ...draft, city: e.target.value })}
-                                        className="enterprise-input"
-                                        placeholder="City"
-                                    />
-                                </div>
-                                <div>
-                                    <Input
-                                        value={draft.state || ""}
-                                        onChange={(e) => setDraft({ ...draft, state: e.target.value })}
-                                        className="enterprise-input"
-                                        placeholder="State"
-                                    />
-                                </div>
-                                <div>
-                                    <Input
-                                        value={draft.pincode || ""}
-                                        onChange={(e) => setDraft({ ...draft, pincode: e.target.value })}
-                                        className="enterprise-input"
-                                        placeholder="Pincode"
-                                    />
-                                </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="md:col-span-2">
+                                <Input
+                                    value={draft.line1 || ""}
+                                    onChange={(e) => setDraft({ ...draft, line1: e.target.value })}
+                                    className="enterprise-input"
+                                    placeholder="Line 1"
+                                />
                             </div>
-                        )}
+                            <div className="md:col-span-2">
+                                <Input
+                                    value={draft.line2 || ""}
+                                    onChange={(e) => setDraft({ ...draft, line2: e.target.value })}
+                                    className="enterprise-input"
+                                    placeholder="Line 2"
+                                />
+                            </div>
+                            <div className="md:col-span-2">
+                                <Input
+                                    value={draft.line3 || ""}
+                                    onChange={(e) => setDraft({ ...draft, line3: e.target.value })}
+                                    className="enterprise-input"
+                                    placeholder="Line 3"
+                                />
+                            </div>
+                            <div>
+                                <Input
+                                    value={draft.city || ""}
+                                    onChange={(e) => setDraft({ ...draft, city: e.target.value })}
+                                    className="enterprise-input"
+                                    placeholder="City"
+                                />
+                            </div>
+                            <div>
+                                <Input
+                                    value={draft.state || ""}
+                                    onChange={(e) => setDraft({ ...draft, state: e.target.value })}
+                                    className="enterprise-input"
+                                    placeholder="State"
+                                />
+                            </div>
+                            <div>
+                                <Input
+                                    value={draft.pincode || ""}
+                                    onChange={(e) => setDraft({ ...draft, pincode: e.target.value })}
+                                    className="enterprise-input"
+                                    placeholder="Pincode"
+                                />
+                            </div>
+                        </div>
                     </div>
                 ),
                 onSave: (draft) => {
-                    const sameAsPermanentAddress = draft.sameAsPermanentAddress === true;
                     updateFormData({
-                        sameAsPermanentAddress,
-                        communicationAddressLine1: sameAsPermanentAddress ? "" : draft.line1 || "",
-                        communicationAddressLine2: sameAsPermanentAddress ? "" : draft.line2 || "",
-                        communicationAddressLine3: sameAsPermanentAddress ? "" : draft.line3 || "",
-                        communicationAddressCity: sameAsPermanentAddress ? "" : draft.city || "",
-                        communicationAddressState: sameAsPermanentAddress ? "" : draft.state || "",
-                        communicationAddressPincode: sameAsPermanentAddress ? "" : draft.pincode || "",
-                        communicationAddress: sameAsPermanentAddress
-                            ? ""
-                            : formatAddress({
-                                  line1: draft.line1 || "",
-                                  line2: draft.line2 || "",
-                                  line3: draft.line3 || "",
-                                  city: draft.city || "",
-                                  state: draft.state || "",
-                                  pincode: draft.pincode || "",
-                              }),
+                        sameAsPermanentAddress: false,
+                        communicationAddressLine1: draft.line1 || "",
+                        communicationAddressLine2: draft.line2 || "",
+                        communicationAddressLine3: draft.line3 || "",
+                        communicationAddressCity: draft.city || "",
+                        communicationAddressState: draft.state || "",
+                        communicationAddressPincode: draft.pincode || "",
+                        communicationAddress: formatAddress({
+                            line1: draft.line1 || "",
+                            line2: draft.line2 || "",
+                            line3: draft.line3 || "",
+                            city: draft.city || "",
+                            state: draft.state || "",
+                            pincode: draft.pincode || "",
+                        }),
                     });
                 },
             });
         }
 
-        if (hasChanged("isPep")) {
-            items.push({
-                id: "isPep",
-                label: "Politically Exposed Person",
-                value: formData.isPep ? "Yes" : "No",
-                getDraft: () => ({ value: !!formData.isPep }),
-                renderEdit: (draft, setDraft) => (
-                    <Select value={draft.value ? "yes" : "no"} onValueChange={(val) => setDraft({ ...draft, value: val === "yes" })}>
-                        <SelectTrigger className="enterprise-input flex items-center justify-between">
-                            <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                            <SelectItem value="yes" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                Yes
-                            </SelectItem>
-                            <SelectItem value="no" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                No
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                ),
-                onSave: (draft) => updateFormData({ isPep: !!draft.value }),
-            });
-        }
-        if (hasChanged("isIndianNational")) {
-            items.push({
-                id: "isIndianNational",
-                label: "Indian National",
-                value: formData.isIndianNational ? "Yes" : "No",
-                getDraft: () => ({ value: !!formData.isIndianNational }),
-                renderEdit: (draft, setDraft) => (
-                    <Select value={draft.value ? "yes" : "no"} onValueChange={(val) => setDraft({ ...draft, value: val === "yes" })}>
-                        <SelectTrigger className="enterprise-input flex items-center justify-between">
-                            <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                            <SelectItem value="yes" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                Yes
-                            </SelectItem>
-                            <SelectItem value="no" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                No
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                ),
-                onSave: (draft) => updateFormData({ isIndianNational: !!draft.value }),
-            });
-        }
-        if (hasChanged("isTaxResidentIndiaOnly")) {
-            items.push({
-                id: "isTaxResidentIndiaOnly",
-                label: "Tax Resident of India Only",
-                value: formData.isTaxResidentIndiaOnly ? "Yes" : "No",
-                getDraft: () => ({ value: !!formData.isTaxResidentIndiaOnly }),
-                renderEdit: (draft, setDraft) => (
-                    <Select value={draft.value ? "yes" : "no"} onValueChange={(val) => setDraft({ ...draft, value: val === "yes" })}>
-                        <SelectTrigger className="enterprise-input flex items-center justify-between">
-                            <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                            <SelectItem value="yes" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                Yes
-                            </SelectItem>
-                            <SelectItem value="no" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                No
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                ),
-                onSave: (draft) => updateFormData({ isTaxResidentIndiaOnly: !!draft.value }),
-            });
-        }
-
-        if (hasChanged("wantsNominee")) {
-            const nomineeEnabled = !!formData.wantsNominee;
-            items.push({ id: "wantsNominee", label: "Add Nominee", value: nomineeEnabled ? "Yes" : "No" });
-        }
-
         const nomineeEnabled = !!formData.wantsNominee;
-        if (nomineeEnabled && (hasChanged("nominees") || hasChanged("wantsNominee"))) {
+        if (nomineeEnabled && hasChanged("nominees")) {
             const nominees = Array.isArray(formData.nominees) ? formData.nominees : [];
             nominees.forEach((nominee: any, index: number) => {
                 const addressValue = formatAddress({

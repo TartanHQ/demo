@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createInviteToken } from "@/lib/inviteToken";
 
-type JourneyType = "ntb" | "ntb-lite" | "ntb-conversion" | "etb-nk" | "etb" | "journey2";
+type JourneyType = "ntb" | "ntb-conversion" | "etb-nk" | "etb";
 
 export interface InviteRecord {
   id: string;

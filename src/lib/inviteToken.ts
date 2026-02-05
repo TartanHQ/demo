@@ -1,4 +1,4 @@
-export type JourneyType = "ntb" | "ntb-lite" | "ntb-conversion" | "etb-nk" | "etb" | "journey2";
+export type JourneyType = "ntb" | "ntb-conversion" | "etb-nk" | "etb";
 
 export type InviteTokenPayloadV1 = {
   v: 1;
