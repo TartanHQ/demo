@@ -16,6 +16,7 @@ export default function StepKycChoice() {
     switchToDigitalKycFlow,
     journeySteps,
     setBottomBarContent,
+    journeyType,
   } = useJourney();
   const [selectedMethod, setSelectedMethod] = useState<string | null>(formData.kycMethod || null);
   const [isLoading, setIsLoading] = useState(false);
@@ -75,6 +76,7 @@ export default function StepKycChoice() {
       <div className="space-y-4">
         {(() => {
           const isSelected = selectedMethod === "ekyc";
+          const isEtbWithKyc = journeyType === "etb-nk";
           return (
             <div
               onClick={() => handleChoice("ekyc")}
@@ -88,15 +90,25 @@ export default function StepKycChoice() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-base font-bold text-slate-900">Digital KYC via Aadhaar</p>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
-                    Recommended
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">
-                    Fast
-                  </span>
+                  <p className="text-base font-bold text-slate-900">
+                    {isEtbWithKyc ? "Debit Card/ Internet Banking Verification" : "Digital KYC via Aadhaar"}
+                  </p>
+                  {!isEtbWithKyc && (
+                    <>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
+                        Recommended
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">
+                        Fast
+                      </span>
+                    </>
+                  )}
                 </div>
-                <p className="text-sm text-slate-500 mt-1">Typically under 2 minutes. Requires Aadhaar registered mobile.</p>
+                <p className="text-sm text-slate-500 mt-1">
+                  {isEtbWithKyc
+                    ? "Verify using debit card or internet banking credentials."
+                    : "Typically under 2 minutes. Requires Aadhaar registered mobile."}
+                </p>
               </div>
               <div className={["w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors", isSelected ? "border-[#004C8F]" : "border-slate-200 group-hover:border-[#004C8F]"].join(" ")}>
                 <div className={["w-3 h-3 rounded-full bg-[#004C8F] transition-opacity", isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"].join(" ")} />

@@ -155,7 +155,7 @@ export default function StepAutoConversion() {
                 const updated = { ...formData, autoConvertConsent: "newSalary" };
                 setChoice("newSalary");
                 updateFormData({ autoConvertConsent: "newSalary" });
-                startJourney("ntb-conversion", updated, "kycChoice");
+                startJourney("etb-nk", updated, "kycChoice");
               }}
               className={[
                 "h-11 rounded-[var(--radius)] border px-4 text-sm font-semibold transition-colors text-left",

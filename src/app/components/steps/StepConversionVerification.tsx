@@ -6,7 +6,7 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import StepCard from "@/app/components/layout/StepCard";
-import { CheckCircle2, CreditCard, Globe, Loader2 } from "lucide-react";
+import { CheckCircle2, CreditCard, Globe } from "lucide-react";
 
 type VerificationMethod = "debit" | "netbanking";
 
@@ -203,16 +203,7 @@ export default function StepConversionVerification() {
                 onClick={handleVerify}
                 disabled={isVerifying || !isFormValid}
               >
-                {isVerifying ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Verifying...
-                  </span>
-                ) : method === "debit" ? (
-                  "Verify"
-                ) : (
-                  "Login to Verify"
-                )}
+                {method === "debit" ? "Verify" : "Login to Verify"}
               </Button>
             </div>
           </div>

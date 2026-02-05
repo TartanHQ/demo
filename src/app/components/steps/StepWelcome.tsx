@@ -174,13 +174,13 @@ export default function StepWelcome() {
                 }
               }}
               className={`enterprise-input pl-12 relative z-0 ${validationErrors.mobile ? 'error' : ''} ${
-                journeyType === "etb" || journeyType === "etb-nk" || journeyType === "ntb" || journeyType === "ntb-conversion"
+                journeyType === "etb" || journeyType === "etb-nk" || journeyType === "etb-ak" || journeyType === "ntb" || journeyType === "ntb-conversion"
                   ? "bg-gray-100 text-gray-500 cursor-not-allowed"
                   : ""
               }`}
               placeholder="98765 43210"
               autoFocus
-              disabled={otpSent || journeyType === "etb" || journeyType === "etb-nk" || journeyType === "ntb" || journeyType === "ntb-conversion"}
+              disabled={otpSent || journeyType === "etb" || journeyType === "etb-nk" || journeyType === "etb-ak" || journeyType === "ntb" || journeyType === "ntb-conversion"}
             />
           </div>
           {validationErrors.mobile && (
@@ -209,11 +209,11 @@ export default function StepWelcome() {
             }}
             max={new Date().toISOString().split("T")[0]}
             className={`enterprise-input ${validationErrors.dob ? 'error' : ''} ${
-              journeyType === "etb" || journeyType === "etb-nk" || journeyType === "ntb" || journeyType === "ntb-conversion"
+              journeyType === "etb" || journeyType === "etb-nk" || journeyType === "etb-ak" || journeyType === "ntb" || journeyType === "ntb-conversion"
                 ? "bg-gray-100 text-gray-500 cursor-not-allowed"
                 : ""
             }`}
-            disabled={otpSent || journeyType === "etb" || journeyType === "etb-nk" || journeyType === "ntb" || journeyType === "ntb-conversion"}
+            disabled={otpSent || journeyType === "etb" || journeyType === "etb-nk" || journeyType === "etb-ak" || journeyType === "ntb" || journeyType === "ntb-conversion"}
           />
           {validationErrors.dob && (
             <p className="error-text">
@@ -241,12 +241,12 @@ export default function StepWelcome() {
               }
             }}
             className={`enterprise-input uppercase ${validationErrors.pan ? 'error' : ''} ${
-              journeyType === "etb" || journeyType === "etb-nk" || journeyType === "ntb" || journeyType === "ntb-conversion"
+              journeyType === "etb" || journeyType === "etb-nk" || journeyType === "etb-ak" || journeyType === "ntb" || journeyType === "ntb-conversion"
                 ? "bg-gray-100 text-gray-500 cursor-not-allowed"
                 : ""
             }`}
             placeholder="ABCDE1234F"
-            disabled={otpSent || journeyType === "etb" || journeyType === "etb-nk" || journeyType === "ntb" || journeyType === "ntb-conversion"}
+            disabled={otpSent || journeyType === "etb" || journeyType === "etb-nk" || journeyType === "etb-ak" || journeyType === "ntb" || journeyType === "ntb-conversion"}
           />
           {validationErrors.pan && (
             <p className="error-text">

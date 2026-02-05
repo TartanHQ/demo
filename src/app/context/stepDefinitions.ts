@@ -21,7 +21,7 @@ import StepConversionVerification from "@/app/components/steps/StepConversionVer
 
 
 export type UserType = "ntb" | "etb-nk" | "etb";
-export type JourneyType = "ntb" | "ntb-conversion" | "etb-nk" | "etb";
+export type JourneyType = "ntb" | "ntb-conversion" | "etb-nk" | "etb-ak" | "etb";
 
 export interface Step {
   id: string;
