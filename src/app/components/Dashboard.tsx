@@ -16,10 +16,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type JourneyKey = "ntb" | "etb" | "etb-nk" | "etb-ak";
+type JourneyKey = "ntb" | "etb" | "etb-nk";
 
 function getJourneyCategory(journey: string): {
-    label: "NTB" | "ETB: Auto Conv." | "ETB with KYC" | "ETB with AKYC";
+    label: "NTB" | "ETB: Auto Conv." | "ETB with KYC";
     className: string;
 } {
     switch (journey) {
@@ -39,11 +39,6 @@ function getJourneyCategory(journey: string): {
                 label: "ETB with KYC",
                 className: "bg-red-50 text-[#ED232A] border border-red-100",
             };
-        case "etb-ak":
-            return {
-                label: "ETB with AKYC",
-                className: "bg-emerald-50 text-emerald-700 border border-emerald-100",
-            };
     }
 }
 
@@ -55,7 +50,6 @@ export default function Dashboard() {
         { id: "CBS-240013", name: "Aarav Mehta", phone: "9876543210", email: "aarav.mehta@cholabusiness.example", journey: "ntb" as JourneyKey, dob: "1994-03-12", pan: "QWERT1234P", fatherName: "Rakesh Mehta", motherName: "Neeta Mehta", currentAddress: "Flat 12B, HSR Layout, Bengaluru 560102", income: "1450000" },
         { id: "CBS-240019", name: "Diya Sharma", phone: "9811122233", email: "diya.sharma@cholabusiness.example", journey: "etb-nk" as JourneyKey, dob: "1991-09-08", pan: "ASDFG4321K", fatherName: "Suresh Sharma", motherName: "Anita Sharma", currentAddress: "Sector 45, Gurugram 122003", income: "1900000" },
         { id: "CBS-240042", name: "Kabir Singh", phone: "9899001122", email: "kabir.singh@cholabusiness.example", journey: "etb" as JourneyKey, dob: "1989-01-23", pan: "ZXCVB6789L", fatherName: "Harjit Singh", motherName: "Manpreet Kaur", currentAddress: "Andheri East, Mumbai 400069", income: "2400000" },
-        { id: "CBS-240042-AK", name: "Riya Verma", phone: "9812345678", email: "riya.verma@cholabusiness.example", journey: "etb-ak" as JourneyKey, dob: "1990-11-21", pan: "QAZWS1234L", fatherName: "M. Verma", motherName: "S. Verma", currentAddress: "Rajaji Nagar, Bengaluru 560010", income: "1850000" },
         { id: "CBS-240058", name: "Ananya Iyer", phone: "9822334455", email: "ananya.iyer@cholabusiness.example", journey: "ntb" as JourneyKey, dob: "1996-07-14", pan: "POIUY1122M", fatherName: "S. Iyer", motherName: "Lakshmi Iyer", currentAddress: "Kondapur, Hyderabad 500084", income: "1200000" },
         { id: "CBS-240071", name: "Rohan Kulkarni", phone: "9765432109", email: "rohan.kulkarni@cholabusiness.example", journey: "ntb" as JourneyKey, dob: "1993-11-02", pan: "LKJHG5566N", fatherName: "V. Kulkarni", motherName: "M. Kulkarni", currentAddress: "Viman Nagar, Pune 411014", income: "1650000" },
         { id: "CBS-240085", name: "Ishita Gupta", phone: "9998887766", email: "ishita.gupta@cholabusiness.example", journey: "etb" as JourneyKey, dob: "1992-05-19", pan: "MNBVC3344Q", fatherName: "A. Gupta", motherName: "S. Gupta", currentAddress: "DLF Phase 3, Gurugram 122002", income: "2100000" },

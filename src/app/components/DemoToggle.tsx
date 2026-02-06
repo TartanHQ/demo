@@ -7,14 +7,13 @@ import { JourneyType } from "@/app/context/stepDefinitions";
 import { Toggle } from "@/components/ui/toggle";
 import { CreditCard, ArrowRight, Zap } from "lucide-react";
 
-const JOURNEY_TYPES: JourneyType[] = ["ntb", "ntb-conversion", "etb-nk", "etb", "etb-ak"];
+const JOURNEY_TYPES: JourneyType[] = ["ntb", "ntb-conversion", "etb-nk", "etb"];
 
 const JOURNEY_DETAILS: Record<JourneyType, { label: string; icon: React.ElementType }> = {
   "ntb": { label: "Journey 1 (NTB)", icon: CreditCard },
   "ntb-conversion": { label: "Journey 1B (NTB Conversion)", icon: ArrowRight },
   "etb-nk": { label: "Journey 2 (ETB-NK)", icon: CreditCard },
   "etb": { label: "Journey 3 (ETB)", icon: Zap },
-  "etb-ak": { label: "Journey 4 (ETB AKYC)", icon: CreditCard },
 };
 
 export default function DemoToggle() {
