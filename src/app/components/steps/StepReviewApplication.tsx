@@ -154,75 +154,22 @@ export default function StepReviewApplication() {
                 label: "Statement & Notification Email",
                 value: reviewEmail || "—",
                 getDraft: () => ({
-                    usesPrimaryEmailForComms: formData.usesPrimaryEmailForComms !== false,
                     communicationEmail: formData.communicationEmail || "",
                 }),
                 renderEdit: (draft, setDraft) => (
-                    <div className="space-y-3">
-                        <Select
-                            value={draft.usesPrimaryEmailForComms ? "primary" : "different"}
-                            onValueChange={(val) =>
-                                setDraft({
-                                    ...draft,
-                                    usesPrimaryEmailForComms: val === "primary",
-                                })
-                            }
-                        >
-                            <SelectTrigger className="enterprise-input flex items-center justify-between">
-                                <SelectValue placeholder="Select email preference" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                                <SelectItem value="primary" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                    Use primary email
-                                </SelectItem>
-                                <SelectItem value="different" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                    Use a different email
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {!draft.usesPrimaryEmailForComms && (
-                            <Input
-                                type="email"
-                                value={draft.communicationEmail || ""}
-                                onChange={(e) => setDraft({ ...draft, communicationEmail: e.target.value })}
-                                className="enterprise-input"
-                                placeholder="name@example.com"
-                            />
-                        )}
-                    </div>
+                    <Input
+                        type="email"
+                        value={draft.communicationEmail || ""}
+                        onChange={(e) => setDraft({ ...draft, communicationEmail: e.target.value })}
+                        className="enterprise-input"
+                        placeholder="name@example.com"
+                    />
                 ),
                 onSave: (draft) =>
                     updateFormData({
-                        usesPrimaryEmailForComms: draft.usesPrimaryEmailForComms,
-                        communicationEmail: draft.usesPrimaryEmailForComms ? "" : draft.communicationEmail || "",
+                        usesPrimaryEmailForComms: false,
+                        communicationEmail: draft.communicationEmail || "",
                     }),
-            });
-        }
-        if (hasChanged("maritalStatus")) {
-            items.push({
-                id: "maritalStatus",
-                label: "Marital Status",
-                value: formData.maritalStatus ? String(formData.maritalStatus).charAt(0).toUpperCase() + String(formData.maritalStatus).slice(1) : "—",
-                getDraft: () => ({ maritalStatus: formData.maritalStatus || "" }),
-                renderEdit: (draft, setDraft) => (
-                    <Select value={draft.maritalStatus || ""} onValueChange={(val) => setDraft({ ...draft, maritalStatus: val })}>
-                        <SelectTrigger className="enterprise-input flex items-center justify-between">
-                            <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                            <SelectItem value="single" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                Single
-                            </SelectItem>
-                            <SelectItem value="married" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                Married
-                            </SelectItem>
-                            <SelectItem value="other" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                Other
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                ),
-                onSave: (draft) => updateFormData({ maritalStatus: draft.maritalStatus || "" }),
             });
         }
         if (hasChanged("fatherName")) {
@@ -257,39 +204,6 @@ export default function StepReviewApplication() {
                     />
                 ),
                 onSave: (draft) => updateFormData({ motherName: draft.motherName || "" }),
-            });
-        }
-        if (hasChanged("incomeRange")) {
-            items.push({
-                id: "incomeRange",
-                label: "Annual Income Range",
-                value: formatIncomeRange(formData.incomeRange),
-                getDraft: () => ({ incomeRange: formData.incomeRange || "" }),
-                renderEdit: (draft, setDraft) => (
-                    <Select value={draft.incomeRange || ""} onValueChange={(val) => setDraft({ ...draft, incomeRange: val })}>
-                        <SelectTrigger className="enterprise-input flex items-center justify-between">
-                            <SelectValue placeholder="Select income range" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                            <SelectItem value="0-5L" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                Up to ₹5L
-                            </SelectItem>
-                            <SelectItem value="5-10L" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                ₹5L – ₹10L
-                            </SelectItem>
-                            <SelectItem value="10-15L" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                ₹10L – ₹15L
-                            </SelectItem>
-                            <SelectItem value="15-25L" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                ₹15L – ₹25L
-                            </SelectItem>
-                            <SelectItem value="25L+" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                ₹25L+
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                ),
-                onSave: (draft) => updateFormData({ incomeRange: draft.incomeRange || "" }),
             });
         }
 
@@ -417,11 +331,9 @@ export default function StepReviewApplication() {
                 items.push({
                     id: `nominee-${index}`,
                     label: `Nominee ${index + 1}`,
-                    value: [nominee.name, nominee.relation, nominee.dob, addressValue].filter(Boolean).join(" • ") || "—",
+                    value: [nominee.name, addressValue].filter(Boolean).join(" • ") || "—",
                     getDraft: () => ({
                         name: nominee.name || "",
-                        relation: nominee.relation || "",
-                        dob: nominee.dob || "",
                         addressLine1: nominee.addressLine1 || "",
                         addressLine2: nominee.addressLine2 || "",
                         addressLine3: nominee.addressLine3 || "",
@@ -436,34 +348,6 @@ export default function StepReviewApplication() {
                                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                                 className="enterprise-input"
                                 placeholder="Nominee name"
-                            />
-                            <Select value={draft.relation || ""} onValueChange={(val) => setDraft({ ...draft, relation: val })}>
-                                <SelectTrigger className="enterprise-input flex items-center justify-between">
-                                    <SelectValue placeholder="Relationship" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                                    <SelectItem value="spouse" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                        Spouse
-                                    </SelectItem>
-                                    <SelectItem value="father" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                        Father
-                                    </SelectItem>
-                                    <SelectItem value="mother" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                        Mother
-                                    </SelectItem>
-                                    <SelectItem value="son" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                        Son
-                                    </SelectItem>
-                                    <SelectItem value="daughter" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                                        Daughter
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Input
-                                type="date"
-                                value={draft.dob || ""}
-                                onChange={(e) => setDraft({ ...draft, dob: e.target.value })}
-                                className="enterprise-input"
                             />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div className="md:col-span-2">
@@ -523,8 +407,6 @@ export default function StepReviewApplication() {
                             return {
                                 ...item,
                                 name: draft.name || "",
-                                relation: draft.relation || "",
-                                dob: draft.dob || "",
                                 addressLine1: draft.addressLine1 || "",
                                 addressLine2: draft.addressLine2 || "",
                                 addressLine3: draft.addressLine3 || "",

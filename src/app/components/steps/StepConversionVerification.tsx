@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useJourney } from "@/app/context/JourneyContext";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { CheckCircle2, CreditCard, Globe } from "lucide-react";
 type VerificationMethod = "debit" | "netbanking";
 
 export default function StepConversionVerification() {
-  const { nextStep, prevStep, journeySteps, currentStepIndex, updateFormData, formData } = useJourney();
+  const { nextStep, prevStep, journeySteps, currentStepIndex, updateFormData, formData, setBottomBarContent } = useJourney();
   const [method, setMethod] = useState<VerificationMethod>("debit");
   const [cardLast4, setCardLast4] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
@@ -61,9 +61,18 @@ export default function StepConversionVerification() {
     nextStep();
   };
 
+  useEffect(() => {
+    setBottomBarContent(null);
+  }, [setBottomBarContent]);
+
   return (
     <StepCard step={stepLabel} maxWidth="3xl">
       <div className="page-header">
+        <div className="flex items-start justify-end">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            HDFC to give page for this
+          </span>
+        </div>
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="page-title">Verify Yourself</h1>
