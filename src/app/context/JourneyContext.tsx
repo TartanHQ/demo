@@ -74,13 +74,9 @@ const getInitialStepsForJourney = (journeyType: JourneyType): Step[] => {
       // ETB with KYC: Replace e-KYC step with verification, keep rest unchanged.
       stepIds = ["welcome", "kycChoice", "conversionVerification", "etbKycProfile", "complete"];
       break;
-    case "etb-ak": // Existing to Bank - Aadhaar KYC
-      // ETB with AKYC: Same as ETB with KYC but uses e-KYC step.
-      stepIds = ["welcome", "kycChoice", "ekycHandler", "etbKycProfile", "complete"];
-      break;
     case "etb": // Express Flow
-      // ETB Auto Conversion: KYC already complete. Only consent to convert Savings → Salary, then done.
-      stepIds = ["welcome", "autoConversion", "etbKycProfile", "conversionVerification", "complete"];
+      // ETB Auto Conversion: Verify before profile in this flow.
+      stepIds = ["welcome", "autoConversion", "conversionVerification", "etbKycProfile", "complete"];
       break;
   }
 

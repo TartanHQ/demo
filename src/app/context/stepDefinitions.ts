@@ -21,7 +21,7 @@ import StepConversionVerification from "@/app/components/steps/StepConversionVer
 
 
 export type UserType = "ntb" | "etb-nk" | "etb";
-export type JourneyType = "ntb" | "ntb-conversion" | "etb-nk" | "etb-ak" | "etb";
+export type JourneyType = "ntb" | "ntb-conversion" | "etb-nk" | "etb";
 
 export interface Step {
   id: string;
@@ -34,17 +34,17 @@ export const ALL_STEPS: Record<string, Step> = {
   kycChoice: { id: "kycChoice", title: "Select KYC" },
   ekycHandler: { id: "ekycHandler", title: "e-KYC Verification" },
   physicalKyc: { id: "physicalKyc", title: "Physical KYC" },
-  profileDetails: { id: "profileDetails", title: "Your Profile" },
+  profileDetails: { id: "profileDetails", title: "YOUR" },
   autoConversion: { id: "autoConversion", title: "Account Conversion" },
   conversionVerification: { id: "conversionVerification", title: "Verification" },
   incomeDetails: { id: "incomeDetails", title: "Income & Account" },
   nomineeDetails: { id: "nomineeDetails", title: "Nominee Details" },
   reviewApplication: { id: "reviewApplication", title: "Final Verification" },
-  etbKycProfile: { id: "etbKycProfile", title: "Your Profile" },
+  etbKycProfile: { id: "etbKycProfile", title: "YOUR" },
   kycDetails: { id: "kycDetails", title: "VKYC Consent" },
   videoKyc: { id: "videoKyc", title: "Video KYC" },
   accountConversion: { id: "accountConversion", title: "Verify Details" },
-  professionalDetailsExpress: { id: "professionalDetailsExpress", title: "Your Profile" },
+  professionalDetailsExpress: { id: "professionalDetailsExpress", title: "YOUR" },
   complete: { id: "complete", title: "Submitted" },
 };
 
