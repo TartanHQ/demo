@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useJourney } from "@/app/context/JourneyContext";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { CheckCircle2, CreditCard, Globe } from "lucide-react";
 type VerificationMethod = "debit" | "netbanking";
 
 export default function StepConversionVerification() {
-  const { nextStep, prevStep, journeySteps, currentStepIndex, updateFormData } = useJourney();
+  const { nextStep, prevStep, journeySteps, currentStepIndex, updateFormData, formData, setBottomBarContent } = useJourney();
   const [method, setMethod] = useState<VerificationMethod>("debit");
   const [cardLast4, setCardLast4] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
@@ -19,7 +19,8 @@ export default function StepConversionVerification() {
   const [netbankingId, setNetbankingId] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [verified, setVerified] = useState(false);
+  const [showOtp, setShowOtp] = useState(false);
+  const [otp, setOtp] = useState("");
   const [showErrors, setShowErrors] = useState(false);
 
   const stepLabel = useMemo(() => {
@@ -30,7 +31,15 @@ export default function StepConversionVerification() {
 
   const isDebitValid = cardLast4.trim().length === 4 && !!cardExpiry.trim() && !!cardPin.trim();
   const isNetbankingValid = !!netbankingId.trim();
+  const isOtpValid = otp.trim().length === 6;
   const isFormValid = termsAccepted && (method === "debit" ? isDebitValid : isNetbankingValid);
+
+  const maskedPhone = useMemo(() => {
+    const digits = String(formData.mobileNumber || "").replace(/\D/g, "");
+    if (!digits) return "XXXXXXX000";
+    const last3 = digits.slice(-3).padStart(3, "0");
+    return `XXXXXXX${last3}`;
+  }, [formData.mobileNumber]);
 
   const handleVerify = () => {
     setShowErrors(true);
@@ -38,17 +47,32 @@ export default function StepConversionVerification() {
     setIsVerifying(true);
     window.setTimeout(() => {
       setIsVerifying(false);
-      setVerified(true);
-      updateFormData({
-        autoConvertVerified: true,
-        verificationMethod: method,
-      });
-    }, 900);
+      setShowOtp(true);
+    }, 300);
   };
+
+  const handleOtpContinue = () => {
+    setShowErrors(true);
+    if (!isOtpValid) return;
+    updateFormData({
+      autoConvertVerified: true,
+      verificationMethod: method,
+    });
+    nextStep();
+  };
+
+  useEffect(() => {
+    setBottomBarContent(null);
+  }, [setBottomBarContent]);
 
   return (
     <StepCard step={stepLabel} maxWidth="3xl">
       <div className="page-header">
+        <div className="flex items-start justify-end">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            HDFC to give page for this
+          </span>
+        </div>
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="page-title">Verify Yourself</h1>
@@ -64,23 +88,7 @@ export default function StepConversionVerification() {
         </div>
       </div>
 
-      {verified ? (
-        <div className="rounded-[var(--radius-lg)] border border-emerald-200 bg-emerald-50/60 p-6 text-center space-y-2">
-          <div className="flex items-center justify-center">
-            <CheckCircle2 className="w-10 h-10 text-emerald-600" />
-          </div>
-          <p className="text-sm font-semibold text-emerald-800">Verified</p>
-          <p className="text-xs text-emerald-700">
-            Your account has been verified and converted to a Salary Account.
-          </p>
-          <div className="pt-2">
-            <Button type="button" className="btn-primary w-full md:w-[360px]" onClick={nextStep}>
-              Continue
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-3">
             <button
               type="button"
@@ -163,9 +171,10 @@ export default function StepConversionVerification() {
                   <Input
                     type="password"
                     value={cardPin}
-                    onChange={(e) => setCardPin(e.target.value)}
+                    onChange={(e) => setCardPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     className={`enterprise-input ${showErrors && !cardPin ? "error" : ""}`}
                     placeholder="PIN"
+                    inputMode="numeric"
                   />
                 </div>
               </>
@@ -193,22 +202,50 @@ export default function StepConversionVerification() {
               I agree to the Terms & Conditions described in the notice here.
             </label>
 
-            <div className="flex items-center gap-3">
-              <Button type="button" variant="outline" className="h-11 px-6" onClick={prevStep}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                className="btn-primary h-11 px-6"
-                onClick={handleVerify}
-                disabled={isVerifying || !isFormValid}
-              >
-                {method === "debit" ? "Verify" : "Login to Verify"}
-              </Button>
-            </div>
+            {!showOtp && (
+              <div className="flex items-center gap-3">
+                <Button type="button" variant="outline" className="h-11 px-6" onClick={prevStep}>
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  className="btn-primary h-11 px-6"
+                  onClick={handleVerify}
+                  disabled={isVerifying || !isFormValid}
+                >
+                  {method === "debit" ? "Verify" : "Login to Verify"}
+                </Button>
+              </div>
+            )}
+
+            {showOtp && (
+              <div className="space-y-3">
+                <div>
+                  <label className="form-label">Registered Mobile Number</label>
+                  <Input value={maskedPhone} readOnly className="enterprise-input bg-gray-100 text-gray-500 cursor-not-allowed" />
+                </div>
+                <div>
+                  <label className="form-label">Enter OTP</label>
+                  <Input
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className={`enterprise-input ${showErrors && !isOtpValid ? "error" : ""}`}
+                    placeholder="6-digit OTP"
+                    inputMode="numeric"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button type="button" variant="outline" className="h-11 px-6" onClick={prevStep}>
+                    Cancel
+                  </Button>
+                  <Button type="button" className="btn-primary h-11 px-6" onClick={handleOtpContinue} disabled={!isOtpValid}>
+                    Continue
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
     </StepCard>
   );
 }
