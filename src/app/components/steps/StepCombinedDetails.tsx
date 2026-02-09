@@ -22,6 +22,7 @@ type NomineeAddressSource = "communication" | "permanent" | "custom";
 
 type Nominee = {
   name: string;
+  nameLocked: boolean;
   relation: string;
   dob: string;
   addressLine1: string;
@@ -35,6 +36,7 @@ type Nominee = {
 
 const createEmptyNominee = (): Nominee => ({
   name: "",
+  nameLocked: false,
   relation: "",
   dob: "",
   addressLine1: "",
@@ -136,16 +138,18 @@ export default function StepCombinedDetails() {
       return formData.nominees.map((nominee: any) => ({
         ...createEmptyNominee(),
         ...nominee,
+        nameLocked: !!nominee?.name,
         addressSource:
           nominee.addressSource ||
           (nominee.sameAsCommunicationAddress ? "communication" : "custom"),
       }));
     }
     if (formData.nomineeName || formData.nomineeRelation || formData.nomineeDob || formData.nomineeAddress) {
-      return [
+        return [
         {
           ...createEmptyNominee(),
           name: formData.nomineeName || "",
+            nameLocked: !!formData.nomineeName,
           relation: formData.nomineeRelation || "",
           dob: formData.nomineeDob || "",
           addressLine1: formData.nomineeAddressLine1 || formData.nomineeAddress || "",
@@ -238,7 +242,6 @@ export default function StepCombinedDetails() {
   const isAddressComplete = (address: AddressFields) =>
     !!address.line1 &&
     !!address.line2 &&
-    !!address.line3 &&
     !!address.city &&
     !!address.state &&
     !!address.pincode;
@@ -246,7 +249,6 @@ export default function StepCombinedDetails() {
   const isNomineeAddressComplete = (nominee: Nominee) =>
     !!nominee.addressLine1 &&
     !!nominee.addressLine2 &&
-    !!nominee.addressLine3 &&
     !!nominee.addressCity &&
     !!nominee.addressState &&
     !!nominee.addressPincode;
@@ -254,6 +256,7 @@ export default function StepCombinedDetails() {
   const isNomineeComplete = (nominee: Nominee) =>
     !!nominee.name &&
     !!nominee.relation &&
+    !!nominee.dob &&
     (nominee.addressSource !== "custom" || isNomineeAddressComplete(nominee));
 
   const displayEmail = useMemo(
@@ -431,7 +434,7 @@ export default function StepCombinedDetails() {
           <div>
             <label className="form-label flex items-center gap-2">
               <Mail className="w-4 h-4 text-slate-400" />
-              Email Address
+              Email Address *
             </label>
             {usesPrimaryEmailForComms === false ? (
               <div>
@@ -461,7 +464,7 @@ export default function StepCombinedDetails() {
               </>
             )}
             <div className="mt-4 space-y-2">
-              <p className="text-xs font-semibold text-gray-700">Statement & Notification Email</p>
+              <p className="text-xs font-semibold text-gray-700">Statement & Notification Email *</p>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -500,7 +503,7 @@ export default function StepCombinedDetails() {
           <div>
             <label className="form-label flex items-center gap-2">
               <User className="w-4 h-4 text-slate-400" />
-              Marital Status
+              Marital Status *
             </label>
             <Select
               value={maritalStatus}
@@ -540,7 +543,7 @@ export default function StepCombinedDetails() {
           <div>
             <label className="form-label flex items-center gap-2">
               <User className="w-4 h-4 text-slate-400" />
-              Father’s Name
+              Father’s Name *
             </label>
             <Input
               value={fatherName}
@@ -561,7 +564,7 @@ export default function StepCombinedDetails() {
           <div>
             <label className="form-label flex items-center gap-2">
               <User className="w-4 h-4 text-slate-400" />
-              Mother’s Name
+              Mother’s Name *
             </label>
             <Input
               value={motherName}
@@ -594,7 +597,7 @@ export default function StepCombinedDetails() {
 
           {isNtb ? (
             <div>
-              <label className="form-label">Address</label>
+              <label className="form-label">Address *</label>
               <Input
                 value={permanentAddressText}
                 readOnly
@@ -605,7 +608,7 @@ export default function StepCombinedDetails() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="form-label">Line 1</label>
+                <label className="form-label">Line 1 *</label>
                 <Input
                   value={permanentAddress.line1}
                   onChange={(e) => setPermanentAddress((prev) => ({ ...prev, line1: e.target.value }))}
@@ -614,7 +617,7 @@ export default function StepCombinedDetails() {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="form-label">Line 2</label>
+                <label className="form-label">Line 2 *</label>
                 <Input
                   value={permanentAddress.line2}
                   onChange={(e) => setPermanentAddress((prev) => ({ ...prev, line2: e.target.value }))}
@@ -627,12 +630,12 @@ export default function StepCombinedDetails() {
                 <Input
                   value={permanentAddress.line3}
                   onChange={(e) => setPermanentAddress((prev) => ({ ...prev, line3: e.target.value }))}
-                  className={`enterprise-input ${showErrors && !permanentAddress.line3 ? "error" : ""}`}
+                  className="enterprise-input"
                   placeholder="Area/Landmark"
                 />
               </div>
               <div>
-                <label className="form-label">Pincode</label>
+                <label className="form-label">Pincode *</label>
                 <Input
                   value={permanentAddress.pincode}
                     onChange={(e) => {
@@ -650,7 +653,7 @@ export default function StepCombinedDetails() {
                 />
               </div>
                 <div>
-                  <label className="form-label">City</label>
+                  <label className="form-label">City *</label>
                   <Input
                     value={permanentAddress.city}
                     onChange={(e) => setPermanentAddress((prev) => ({ ...prev, city: e.target.value }))}
@@ -659,7 +662,7 @@ export default function StepCombinedDetails() {
                   />
                 </div>
                 <div>
-                  <label className="form-label">State</label>
+                  <label className="form-label">State *</label>
                   <Input
                     value={permanentAddress.state}
                     onChange={(e) => setPermanentAddress((prev) => ({ ...prev, state: e.target.value }))}
@@ -696,7 +699,7 @@ export default function StepCombinedDetails() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="form-label">Line 1</label>
+                  <label className="form-label">Line 1 *</label>
                   <Input
                     value={communicationAddress.line1}
                     onChange={(e) => setCommunicationAddress((prev) => ({ ...prev, line1: e.target.value }))}
@@ -705,7 +708,7 @@ export default function StepCombinedDetails() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="form-label">Line 2</label>
+                  <label className="form-label">Line 2 *</label>
                   <Input
                     value={communicationAddress.line2}
                     onChange={(e) => setCommunicationAddress((prev) => ({ ...prev, line2: e.target.value }))}
@@ -718,12 +721,12 @@ export default function StepCombinedDetails() {
                   <Input
                     value={communicationAddress.line3}
                     onChange={(e) => setCommunicationAddress((prev) => ({ ...prev, line3: e.target.value }))}
-                    className={`enterprise-input ${showErrors && !communicationAddress.line3 ? "error" : ""}`}
+                    className="enterprise-input"
                     placeholder="Area/Landmark"
                   />
                 </div>
                 <div>
-                  <label className="form-label">Pincode</label>
+                  <label className="form-label">Pincode *</label>
                   <Input
                     value={communicationAddress.pincode}
                     onChange={(e) => {
@@ -741,7 +744,7 @@ export default function StepCombinedDetails() {
                   />
                 </div>
                 <div>
-                  <label className="form-label">City</label>
+                  <label className="form-label">City *</label>
                   <Input
                     value={communicationAddress.city}
                     onChange={(e) => setCommunicationAddress((prev) => ({ ...prev, city: e.target.value }))}
@@ -750,7 +753,7 @@ export default function StepCombinedDetails() {
                   />
                 </div>
                 <div>
-                  <label className="form-label">State</label>
+                  <label className="form-label">State *</label>
                   <Input
                     value={communicationAddress.state}
                     onChange={(e) => setCommunicationAddress((prev) => ({ ...prev, state: e.target.value }))}
@@ -774,7 +777,7 @@ export default function StepCombinedDetails() {
           <div>
             <label className="form-label flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-slate-400" />
-              Annual Income Range
+              Annual Income Range *
             </label>
             <Select value={incomeRange} onValueChange={setIncomeRange}>
               <SelectTrigger className={`enterprise-input flex items-center justify-between ${showErrors && !incomeRange ? "error" : ""}`}>
@@ -804,7 +807,7 @@ export default function StepCombinedDetails() {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-gray-900">
-                  Do you want to add a nominee?
+                  Do you want to add a nominee? *
                 </p>
                 <p className="text-xs text-gray-600 mt-1">
                   If yes, add nominee details. You can add up to 4 nominees.
@@ -888,7 +891,7 @@ export default function StepCombinedDetails() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="form-label">Relationship</label>
+                      <label className="form-label">Relationship *</label>
                       <Select
                         value={nominee.relation}
                         onValueChange={(val) =>
@@ -898,10 +901,16 @@ export default function StepCombinedDetails() {
                               const next = { ...item, relation: val };
                               if (val === "father") {
                                 next.name = fatherName;
+                                next.nameLocked = true;
+                                return next;
                               }
                               if (val === "mother") {
                                 next.name = motherName;
+                                next.nameLocked = true;
+                                return next;
                               }
+                              next.name = "";
+                              next.nameLocked = false;
                               return next;
                             })
                           )
@@ -930,7 +939,7 @@ export default function StepCombinedDetails() {
                       </Select>
                     </div>
                     <div>
-                      <label className="form-label">Nominee’s Full Name</label>
+                      <label className="form-label">Nominee’s Full Name *</label>
                       <Input
                         type="text"
                         value={nominee.name}
@@ -939,12 +948,16 @@ export default function StepCombinedDetails() {
                             prev.map((item, idx) => (idx === index ? { ...item, name: e.target.value } : item))
                           )
                         }
-                        className={`enterprise-input ${showErrors && !nominee.name ? "error" : ""}`}
+                        className={`enterprise-input ${showErrors && !nominee.name ? "error" : ""} ${
+                          nominee.nameLocked ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+                        }`}
                         placeholder="Enter full name"
+                        readOnly={nominee.nameLocked}
+                        disabled={nominee.nameLocked}
                       />
                     </div>
                   <div>
-                    <label className="form-label">Nominee Date of Birth</label>
+                    <label className="form-label">Nominee Date of Birth *</label>
                     <Input
                       type="date"
                         value={nominee.dob}
@@ -953,7 +966,7 @@ export default function StepCombinedDetails() {
                             prev.map((item, idx) => (idx === index ? { ...item, dob: e.target.value } : item))
                           )
                         }
-                      className="enterprise-input"
+                      className={`enterprise-input ${showErrors && !nominee.dob ? "error" : ""}`}
                     />
                     </div>
                   </div>
@@ -963,7 +976,9 @@ export default function StepCombinedDetails() {
                     <div className="flex flex-wrap gap-2">
                       {[
                         { value: "permanent", label: "Use permanent address" },
-                        { value: "communication", label: "Use communication address" },
+                        ...(sameAsPermanentAddress
+                          ? []
+                          : [{ value: "communication", label: "Use communication address" }]),
                         { value: "custom", label: "Enter a different address" },
                       ].map((option) => (
                         <button
@@ -999,7 +1014,7 @@ export default function StepCombinedDetails() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
-                      <label className="form-label">Line 1</label>
+                      <label className="form-label">Line 1 *</label>
                       <Input
                         value={nominee.addressLine1}
                         onChange={(e) =>
@@ -1013,7 +1028,7 @@ export default function StepCombinedDetails() {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="form-label">Line 2</label>
+                      <label className="form-label">Line 2 *</label>
                       <Input
                         value={nominee.addressLine2}
                         onChange={(e) =>
@@ -1035,13 +1050,13 @@ export default function StepCombinedDetails() {
                             prev.map((item, idx) => (idx === index ? { ...item, addressLine3: e.target.value } : item))
                           )
                         }
-                        className={`enterprise-input ${showErrors && !nominee.addressLine3 ? "error" : ""}`}
+                        className="enterprise-input"
                         placeholder="Area/Landmark"
                         disabled={addressDisabled}
                       />
                     </div>
                     <div>
-                      <label className="form-label">Pincode</label>
+                      <label className="form-label">Pincode *</label>
                       <Input
                         value={nominee.addressPincode}
                         onChange={(e) =>
@@ -1065,7 +1080,7 @@ export default function StepCombinedDetails() {
                       />
                     </div>
                     <div>
-                      <label className="form-label">City</label>
+                      <label className="form-label">City *</label>
                       <Input
                         value={nominee.addressCity}
                         onChange={(e) =>
@@ -1079,7 +1094,7 @@ export default function StepCombinedDetails() {
                       />
                     </div>
                     <div>
-                      <label className="form-label">State</label>
+                      <label className="form-label">State *</label>
                       <Input
                         value={nominee.addressState}
                         onChange={(e) =>
