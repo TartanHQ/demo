@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useJourney } from "@/app/context/JourneyContext";
+import { makeJourneyStepId } from "@/app/context/stepDefinitions";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2, MapPin, Search, ArrowRight } from "lucide-react";
@@ -9,7 +10,7 @@ import { trackEvent } from "@/lib/analytics";
 import StepCard from "@/app/components/layout/StepCard";
 
 export default function StepPhysicalKyc() {
-  const { resetJourney, goToStep } = useJourney();
+  const { resetJourney, goToStep, journeyType } = useJourney();
 
   useEffect(() => {
     trackEvent('page_viewed', { page: 'physicalKyc' });
@@ -33,7 +34,7 @@ export default function StepPhysicalKyc() {
       <div className="page-header text-center">
         <h1 className="page-title">Application Saved</h1>
         <p className="page-subtitle">
-          Visit your nearest HDFC Bank branch to complete KYC verification
+          Visit your nearest HDFC Bank branch to complete KYC verification. Your account activation will not be processed right now in this case. 
         </p>
       </div>
 
@@ -84,7 +85,7 @@ export default function StepPhysicalKyc() {
 
         <div className="text-center">
           <button
-            onClick={() => goToStep("ekycHandler")}
+            onClick={() => journeyType && goToStep(makeJourneyStepId(journeyType, "ekycHandler"))}
             className="btn-link"
           >
             Switch to Digital KYC (Faster)

@@ -32,10 +32,17 @@ function getStore(): Map<string, InviteRecord> {
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
+  const url = new URL(req.url);
+  const variant = url.searchParams.get("variant");
 
   const journeyType = body?.journeyType as JourneyType | undefined;
   const employee = body?.employee as InviteRecord["employee"] | undefined;
   const prefilledData = (body?.prefilledData ?? {}) as Record<string, unknown>;
+  const variantPrefill =
+    variant === "etb-nk-netbanking-only"
+      ? { disableDebitVerification: true, redirectToBankSite: true }
+      : {};
+  const mergedPrefilledData = { ...prefilledData, ...variantPrefill };
 
   if (!journeyType || !employee?.id || !employee?.name || !employee?.email) {
     return NextResponse.json(
@@ -56,7 +63,7 @@ export async function POST(req: Request) {
       phone: employee.phone,
     },
     journeyType,
-    prefilledData,
+    prefilledData: mergedPrefilledData,
     status: "sent",
     createdAt: now,
     lastUpdatedAt: now,

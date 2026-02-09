@@ -25,6 +25,7 @@ export default function StepWelcome() {
   const lastBottomBarKeyRef = useRef<string | null>(null);
   const otpSectionRef = useRef<HTMLDivElement | null>(null);
   const otpInputRef = useRef<HTMLInputElement | null>(null);
+  const isEtbAutoConversion = journeyType === "etb";
 
   const stepLabel = React.useMemo(() => {
     const total = journeySteps.length || 0;
@@ -74,6 +75,13 @@ export default function StepWelcome() {
     }, 800);
   }, [addNotification, config.name, dob, mobileNumber, pan, updateFormData, validateForm]);
 
+  useEffect(() => {
+    if (!isEtbAutoConversion || otpSent) return;
+    updateFormData({ mobileNumber, dob, pan });
+    setOtpSent(true);
+    addNotification(`${config.name}`, `Your OTP is: 481230`);
+  }, [addNotification, config.name, dob, isEtbAutoConversion, mobileNumber, otpSent, pan, updateFormData]);
+
   const verifyOtp = useCallback(() => {
     if (otp.length !== 6) return;
     setIsLoading(true);
@@ -99,6 +107,9 @@ export default function StepWelcome() {
     const primaryLabel = otpSent ? "Verify & Continue" : "Request OTP";
     const disabled = isLoading || (otpSent ? otp.length !== 6 : false);
     const onClick = otpSent ? verifyOtp : requestOtp;
+    const resolvedLabel = isEtbAutoConversion ? "Verify & Continue" : primaryLabel;
+    const resolvedDisabled = isEtbAutoConversion ? isLoading || otp.length !== 6 || !consent : disabled;
+    const resolvedClick = isEtbAutoConversion ? verifyOtp : onClick;
     const bottomBarKey = `${otpSent}|${isLoading}|${otp.length}|${mobileNumber}|${dob}|${pan}|${consent}`;
 
     // Prevent any accidental render -> effect -> state -> render loops by ensuring
@@ -110,8 +121,8 @@ export default function StepWelcome() {
       <div className="w-full flex justify-end">
         <Button
           type="button"
-          onClick={onClick}
-          disabled={disabled}
+          onClick={resolvedClick}
+          disabled={resolvedDisabled}
           variant="primary-cta"
           className="btn-primary w-full md:w-[360px]"
           style={{background:"#000000 !important"}}
@@ -120,18 +131,18 @@ export default function StepWelcome() {
           {isLoading ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              {otpSent ? "Verifying..." : "Sending OTP..."}
+              {resolvedLabel === "Verify & Continue" ? "Verifying..." : "Sending OTP..."}
             </>
           ) : (
             <>
-              {primaryLabel}
+              {resolvedLabel}
               <ArrowRight className="w-5 h-5" />
             </>
           )}
         </Button>
       </div>
     );
-  }, [otpSent, otp.length, isLoading, setBottomBarContent, requestOtp, verifyOtp, mobileNumber, dob, pan, consent]);
+  }, [dob, isEtbAutoConversion, isLoading, mobileNumber, otp.length, otpSent, pan, requestOtp, setBottomBarContent, verifyOtp]);
 
   return (
     <StepCard step={stepLabel} maxWidth="2xl">
@@ -265,7 +276,6 @@ export default function StepWelcome() {
           <label className="flex items-start gap-3 cursor-pointer group">
             <Checkbox
               checked={consent}
-              disabled={otpSent}
               onCheckedChange={(v) => {
                 const next = v === true;
                 setConsent(next);
@@ -295,15 +305,15 @@ export default function StepWelcome() {
           >
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-900 font-medium">
-                A 6-digit code has been sent to +91 {mobileNumber}
+                OTP Sent. Please verify.
               </p>
-              <button
+              {/* <button
                 type="button"
                 onClick={() => setOtpSent(false)}
                 className="text-xs text-blue-600 hover:text-blue-700 underline mt-1"
               >
                 Change number
-              </button>
+              </button> */}
             </div>
 
             <div>

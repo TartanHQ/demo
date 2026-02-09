@@ -32,6 +32,7 @@ export default function JourneyInvitePage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<{ title: string; message: string } | null>(null);
+  const [redirectToBankSite, setRedirectToBankSite] = useState(false);
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -47,6 +48,12 @@ export default function JourneyInvitePage() {
         // Stateless token (Vercel-safe): decode locally and start journey without API.
         const tokenPayload = parseInviteToken(inviteId);
         if (tokenPayload) {
+          if ((tokenPayload.prefilledData as Record<string, unknown>)?.redirectToBankSite) {
+            startedRef.current = true;
+            setRedirectToBankSite(true);
+            setIsLoading(false);
+            return;
+          }
           startedRef.current = true;
           startJourney(tokenPayload.journeyType, {
             inviteId: tokenPayload.id,
@@ -72,6 +79,11 @@ export default function JourneyInvitePage() {
         }
 
         const invite = (await res.json()) as InviteApiResponse;
+        if ((invite.prefilledData as Record<string, unknown>)?.redirectToBankSite) {
+          startedRef.current = true;
+          setRedirectToBankSite(true);
+          return;
+        }
 
         // Initialize journey with prefilled data
         startedRef.current = true;
@@ -135,6 +147,14 @@ export default function JourneyInvitePage() {
             </div>
           </div>
         </AgentLayout>
+      </div>
+    );
+  }
+
+  if (redirectToBankSite) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-sm text-slate-600">Redirecting to HDFC bank&apos;s site</p>
       </div>
     );
   }

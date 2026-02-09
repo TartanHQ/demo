@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useJourney } from "@/app/context/JourneyContext";
+import { makeJourneyStepId } from "@/app/context/stepDefinitions";
 import { MapPin, FileText, Loader2 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import StepCard from "@/app/components/layout/StepCard";
@@ -41,7 +42,8 @@ export default function StepKycChoice() {
       setIsLoading(false);
       return;
     }
-    if (!journeySteps.some(s => s.id === "ekycHandler")) {
+    const kycHandlerId = makeJourneyStepId(journeyType || "ntb", "ekycHandler");
+    if (!journeySteps.some(s => s.id === kycHandlerId)) {
       switchToDigitalKycFlow();
     } else {
       nextStep();
@@ -132,7 +134,7 @@ export default function StepKycChoice() {
               </div>
               <div className="flex-1">
                 <p className="text-base font-bold text-slate-900">Physical KYC</p>
-                <p className="text-sm text-slate-500 mt-1">Complete verification at a branch or via scheduled visit.</p>
+                <p className="text-sm text-slate-500 mt-1">Complete verification at a branch or via scheduled visit. Your account activation will not be processed right now in this case. </p>
               </div>
             <div className={["w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors", isSelected ? "border-orange-600" : "border-slate-200 group-hover:border-[#004C8F]"].join(" ")}>
                 <div className={["w-3 h-3 rounded-full bg-orange-600 transition-opacity", isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"].join(" ")} />
