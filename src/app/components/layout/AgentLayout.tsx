@@ -13,15 +13,16 @@ import { Button } from "@/app/components/ui/button";
 
 export default function AgentLayout({ children }: { children: React.ReactNode }) {
     const { config } = useBranding();
-  const { bottomBarContent, showDashboard, currentStepIndex, journeyType, prevStep } = useJourney();
+  const { bottomBarContent, showDashboard, currentStepIndex, journeyType, prevStep, journeySteps } = useJourney();
     const [isConfigOpen, setIsConfigOpen] = useState(false);
     const [isStepperGlassy, setIsStepperGlassy] = useState(false);
     const scrollRef = useRef<HTMLDivElement | null>(null);
 
-    const showBackButton = useMemo(
-        () => !showDashboard && currentStepIndex > 0,
-        [showDashboard, currentStepIndex]
-    );
+    const showBackButton = useMemo(() => {
+        if (showDashboard || currentStepIndex <= 0) return false;
+        const currentStepId = journeySteps[currentStepIndex]?.id;
+        return !String(currentStepId || "").endsWith(":complete");
+    }, [showDashboard, currentStepIndex, journeySteps]);
     const showBottomBar = useMemo(() => !!bottomBarContent || showBackButton, [bottomBarContent, showBackButton]);
     const showStepper = useMemo(() => !showDashboard, [showDashboard]);
 

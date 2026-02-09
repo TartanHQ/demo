@@ -46,6 +46,24 @@ const createEmptyNominee = (): Nominee => ({
   addressSource: "custom",
 });
 
+const PINCODE_LOOKUP: Record<string, { city: string; state: string }> = {
+  "560102": { city: "Bengaluru", state: "Karnataka" },
+  "122003": { city: "Gurugram", state: "Haryana" },
+  "122002": { city: "Gurugram", state: "Haryana" },
+  "122001": { city: "Gurugram", state: "Haryana" },
+  "400069": { city: "Mumbai", state: "Maharashtra" },
+  "500084": { city: "Hyderabad", state: "Telangana" },
+  "411014": { city: "Pune", state: "Maharashtra" },
+  "560038": { city: "Bengaluru", state: "Karnataka" },
+  "700091": { city: "Kolkata", state: "West Bengal" },
+};
+
+const getCityStateForPincode = (pincode: string) => {
+  const normalized = pincode.trim();
+  if (normalized.length !== 6) return null;
+  return PINCODE_LOOKUP[normalized] || null;
+};
+
 const formatAddress = (address: AddressFields) => {
   return [
     address.line1,
@@ -415,13 +433,33 @@ export default function StepCombinedDetails() {
               <Mail className="w-4 h-4 text-slate-400" />
               Email Address
             </label>
-            <Input
-              type="email"
-              value={displayEmail}
-              readOnly
-              className="enterprise-input bg-gray-100 text-gray-500 cursor-not-allowed"
-            />
-            <p className="helper-text">This is prefilled from your invite.</p>
+            {usesPrimaryEmailForComms === false ? (
+              <div>
+                <Input
+                  type="email"
+                  value={communicationEmail}
+                  onChange={(e) => setCommunicationEmail(e.target.value)}
+                  className={`enterprise-input ${showErrors && !communicationEmail ? "error" : ""}`}
+                  placeholder="name@example.com"
+                />
+                {showErrors && !communicationEmail && (
+                  <p className="error-text">
+                    <AlertCircle className="w-4 h-4" />
+                    Please enter a communication email.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <>
+                <Input
+                  type="email"
+                  value={displayEmail}
+                  readOnly
+                  className="enterprise-input bg-gray-100 text-gray-500 cursor-not-allowed"
+                />
+                <p className="helper-text">This is prefilled from your invite.</p>
+              </>
+            )}
             <div className="mt-4 space-y-2">
               <p className="text-xs font-semibold text-gray-700">Statement & Notification Email</p>
               <div className="flex items-center gap-2">
@@ -455,23 +493,6 @@ export default function StepCombinedDetails() {
                   <AlertCircle className="w-4 h-4" />
                   Please select an option.
                 </p>
-              )}
-              {usesPrimaryEmailForComms === false && (
-                <div>
-                  <Input
-                    type="email"
-                    value={communicationEmail}
-                    onChange={(e) => setCommunicationEmail(e.target.value)}
-                    className={`enterprise-input ${showErrors && !communicationEmail ? "error" : ""}`}
-                    placeholder="name@example.com"
-                  />
-                  {showErrors && !communicationEmail && (
-                    <p className="error-text">
-                      <AlertCircle className="w-4 h-4" />
-                      Please enter a communication email.
-                    </p>
-                  )}
-                </div>
               )}
             </div>
           </div>
@@ -524,11 +545,10 @@ export default function StepCombinedDetails() {
             <Input
               value={fatherName}
               onChange={(e) => setFatherName(e.target.value)}
-              className={`enterprise-input ${showErrors && !fatherName ? "error" : ""} ${
-                isNtbConversion ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
-              }`}
+              className={`enterprise-input ${showErrors && !fatherName ? "error" : ""} bg-gray-100 text-gray-500 cursor-not-allowed`}
               placeholder="Full name"
-              readOnly={isNtbConversion}
+              readOnly
+              disabled
             />
             {showErrors && !fatherName && (
               <p className="error-text">
@@ -546,11 +566,10 @@ export default function StepCombinedDetails() {
             <Input
               value={motherName}
               onChange={(e) => setMotherName(e.target.value)}
-              className={`enterprise-input ${showErrors && !motherName ? "error" : ""} ${
-                isNtbConversion ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
-              }`}
+              className={`enterprise-input ${showErrors && !motherName ? "error" : ""} bg-gray-100 text-gray-500 cursor-not-allowed`}
               placeholder="Full name"
-              readOnly={isNtbConversion}
+              readOnly
+              disabled
             />
             {showErrors && !motherName && (
               <p className="error-text">
@@ -613,32 +632,41 @@ export default function StepCombinedDetails() {
                 />
               </div>
               <div>
-                <label className="form-label">City</label>
-                <Input
-                  value={permanentAddress.city}
-                  onChange={(e) => setPermanentAddress((prev) => ({ ...prev, city: e.target.value }))}
-                  className={`enterprise-input ${showErrors && !permanentAddress.city ? "error" : ""}`}
-                  placeholder="City"
-                />
-              </div>
-              <div>
-                <label className="form-label">State</label>
-                <Input
-                  value={permanentAddress.state}
-                  onChange={(e) => setPermanentAddress((prev) => ({ ...prev, state: e.target.value }))}
-                  className={`enterprise-input ${showErrors && !permanentAddress.state ? "error" : ""}`}
-                  placeholder="State"
-                />
-              </div>
-              <div>
                 <label className="form-label">Pincode</label>
                 <Input
                   value={permanentAddress.pincode}
-                  onChange={(e) => setPermanentAddress((prev) => ({ ...prev, pincode: e.target.value }))}
+                    onChange={(e) => {
+                      const nextPincode = e.target.value;
+                      const lookup = getCityStateForPincode(nextPincode);
+                      setPermanentAddress((prev) => ({
+                        ...prev,
+                        pincode: nextPincode,
+                        city: lookup?.city || prev.city,
+                        state: lookup?.state || prev.state,
+                      }));
+                    }}
                   className={`enterprise-input ${showErrors && !permanentAddress.pincode ? "error" : ""}`}
                   placeholder="6-digit PIN"
                 />
               </div>
+                <div>
+                  <label className="form-label">City</label>
+                  <Input
+                    value={permanentAddress.city}
+                    onChange={(e) => setPermanentAddress((prev) => ({ ...prev, city: e.target.value }))}
+                    className={`enterprise-input ${showErrors && !permanentAddress.city ? "error" : ""}`}
+                    placeholder="City"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">State</label>
+                  <Input
+                    value={permanentAddress.state}
+                    onChange={(e) => setPermanentAddress((prev) => ({ ...prev, state: e.target.value }))}
+                    className={`enterprise-input ${showErrors && !permanentAddress.state ? "error" : ""}`}
+                    placeholder="State"
+                  />
+                </div>
             </div>
           )}
           {showErrors && !isPermanentAddressValid && (
@@ -695,6 +723,24 @@ export default function StepCombinedDetails() {
                   />
                 </div>
                 <div>
+                  <label className="form-label">Pincode</label>
+                  <Input
+                    value={communicationAddress.pincode}
+                    onChange={(e) => {
+                      const nextPincode = e.target.value;
+                      const lookup = getCityStateForPincode(nextPincode);
+                      setCommunicationAddress((prev) => ({
+                        ...prev,
+                        pincode: nextPincode,
+                        city: lookup?.city || prev.city,
+                        state: lookup?.state || prev.state,
+                      }));
+                    }}
+                    className={`enterprise-input ${showErrors && !communicationAddress.pincode ? "error" : ""}`}
+                    placeholder="6-digit PIN"
+                  />
+                </div>
+                <div>
                   <label className="form-label">City</label>
                   <Input
                     value={communicationAddress.city}
@@ -710,15 +756,6 @@ export default function StepCombinedDetails() {
                     onChange={(e) => setCommunicationAddress((prev) => ({ ...prev, state: e.target.value }))}
                     className={`enterprise-input ${showErrors && !communicationAddress.state ? "error" : ""}`}
                     placeholder="State"
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Pincode</label>
-                  <Input
-                    value={communicationAddress.pincode}
-                    onChange={(e) => setCommunicationAddress((prev) => ({ ...prev, pincode: e.target.value }))}
-                    className={`enterprise-input ${showErrors && !communicationAddress.pincode ? "error" : ""}`}
-                    placeholder="6-digit PIN"
                   />
                 </div>
               </div>
@@ -850,23 +887,9 @@ export default function StepCombinedDetails() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                      <label className="form-label">Nominee’s Full Name</label>
-                  <Input
-                    type="text"
-                        value={nominee.name}
-                        onChange={(e) =>
-                          setNominees((prev) =>
-                            prev.map((item, idx) => (idx === index ? { ...item, name: e.target.value } : item))
-                          )
-                        }
-                        className={`enterprise-input ${showErrors && !nominee.name ? "error" : ""}`}
-                    placeholder="Enter full name"
-                  />
-                </div>
-                <div>
+                    <div>
                       <label className="form-label">Relationship</label>
-                  <Select
+                      <Select
                         value={nominee.relation}
                         onValueChange={(val) =>
                           setNominees((prev) =>
@@ -885,27 +908,41 @@ export default function StepCombinedDetails() {
                         }
                       >
                         <SelectTrigger className={`enterprise-input flex items-center justify-between ${showErrors && !nominee.relation ? "error" : ""}`}>
-                      <SelectValue placeholder="Select relationship" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                      {[
-                        { value: "spouse", label: "Spouse" },
-                        { value: "father", label: "Father" },
-                        { value: "mother", label: "Mother" },
-                        { value: "son", label: "Son" },
-                        { value: "daughter", label: "Daughter" },
-                      ].map((o) => (
-                        <SelectItem
-                          key={o.value}
-                          value={o.value}
-                          className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
-                        >
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                          <SelectValue placeholder="Select relationship" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                          {[
+                            { value: "spouse", label: "Spouse" },
+                            { value: "father", label: "Father" },
+                            { value: "mother", label: "Mother" },
+                            { value: "son", label: "Son" },
+                            { value: "daughter", label: "Daughter" },
+                          ].map((o) => (
+                            <SelectItem
+                              key={o.value}
+                              value={o.value}
+                              className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
+                            >
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="form-label">Nominee’s Full Name</label>
+                      <Input
+                        type="text"
+                        value={nominee.name}
+                        onChange={(e) =>
+                          setNominees((prev) =>
+                            prev.map((item, idx) => (idx === index ? { ...item, name: e.target.value } : item))
+                          )
+                        }
+                        className={`enterprise-input ${showErrors && !nominee.name ? "error" : ""}`}
+                        placeholder="Enter full name"
+                      />
+                    </div>
                   <div>
                     <label className="form-label">Nominee Date of Birth</label>
                     <Input
@@ -923,77 +960,41 @@ export default function StepCombinedDetails() {
 
                   <div className="space-y-2">
                     <p className="text-xs font-semibold text-gray-800">Nominee Address</p>
-                    {isNtb ? (
-                      <Select
-                        value={nominee.addressSource}
-                        onValueChange={(val) =>
-                          setNominees((prev) =>
-                            prev.map((item, idx) => {
-                              if (idx !== index) return item;
-                              const next = { ...item, addressSource: val as NomineeAddressSource };
-                              if (val === "communication") {
-                                return { ...next, ...communicationAddressForNominee };
-                              }
-                              if (val === "permanent") {
-                                return { ...next, ...permanentAddressForNominee };
-                              }
-                              return next;
-                            })
-                          )
-                        }
-                      >
-                        <SelectTrigger className="enterprise-input flex items-center justify-between">
-                          <SelectValue placeholder="Select address source" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                          <SelectItem value="permanent" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                            Use permanent address
-                          </SelectItem>
-                          <SelectItem value="communication" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                            Use communication address
-                          </SelectItem>
-                          <SelectItem value="custom" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                            Enter a different address
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {[
-                          { value: "permanent", label: "Use permanent address" },
-                          { value: "communication", label: "Use communication address" },
-                          { value: "custom", label: "Enter a different address" },
-                        ].map((option) => (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() =>
-                              setNominees((prev) =>
-                                prev.map((item, idx) => {
-                                  if (idx !== index) return item;
-                                  const next = { ...item, addressSource: option.value as NomineeAddressSource };
-                                  if (option.value === "communication") {
-                                    return { ...next, ...communicationAddressForNominee };
-                                  }
-                                  if (option.value === "permanent") {
-                                    return { ...next, ...permanentAddressForNominee };
-                                  }
-                                  return next;
-                                })
-                              )
-                            }
-                            className={[
-                              "h-8 px-3 rounded-[999px] text-xs font-semibold border transition-colors",
-                              nominee.addressSource === option.value
-                                ? "bg-slate-900 text-white border-slate-900"
-                                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
-                            ].join(" ")}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: "permanent", label: "Use permanent address" },
+                        { value: "communication", label: "Use communication address" },
+                        { value: "custom", label: "Enter a different address" },
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() =>
+                            setNominees((prev) =>
+                              prev.map((item, idx) => {
+                                if (idx !== index) return item;
+                                const next = { ...item, addressSource: option.value as NomineeAddressSource };
+                                if (option.value === "communication") {
+                                  return { ...next, ...communicationAddressForNominee };
+                                }
+                                if (option.value === "permanent") {
+                                  return { ...next, ...permanentAddressForNominee };
+                                }
+                                return next;
+                              })
+                            )
+                          }
+                          className={[
+                            "h-8 px-3 rounded-[999px] text-xs font-semibold border transition-colors",
+                            nominee.addressSource === option.value
+                              ? "bg-slate-900 text-white border-slate-900"
+                              : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
+                          ].join(" ")}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1040,6 +1041,30 @@ export default function StepCombinedDetails() {
                       />
                     </div>
                     <div>
+                      <label className="form-label">Pincode</label>
+                      <Input
+                        value={nominee.addressPincode}
+                        onChange={(e) =>
+                          setNominees((prev) =>
+                            prev.map((item, idx) => {
+                              if (idx !== index) return item;
+                              const nextPincode = e.target.value;
+                              const lookup = getCityStateForPincode(nextPincode);
+                              return {
+                                ...item,
+                                addressPincode: nextPincode,
+                                addressCity: lookup?.city || item.addressCity,
+                                addressState: lookup?.state || item.addressState,
+                              };
+                            })
+                          )
+                        }
+                        className={`enterprise-input ${showErrors && !nominee.addressPincode ? "error" : ""}`}
+                        placeholder="6-digit PIN"
+                        disabled={addressDisabled}
+                      />
+                    </div>
+                    <div>
                       <label className="form-label">City</label>
                       <Input
                         value={nominee.addressCity}
@@ -1064,20 +1089,6 @@ export default function StepCombinedDetails() {
                         }
                         className={`enterprise-input ${showErrors && !nominee.addressState ? "error" : ""}`}
                         placeholder="State"
-                        disabled={addressDisabled}
-                      />
-                    </div>
-                    <div>
-                      <label className="form-label">Pincode</label>
-                      <Input
-                        value={nominee.addressPincode}
-                        onChange={(e) =>
-                          setNominees((prev) =>
-                            prev.map((item, idx) => (idx === index ? { ...item, addressPincode: e.target.value } : item))
-                          )
-                        }
-                        className={`enterprise-input ${showErrors && !nominee.addressPincode ? "error" : ""}`}
-                        placeholder="6-digit PIN"
                         disabled={addressDisabled}
                       />
                     </div>

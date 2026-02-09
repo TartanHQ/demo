@@ -10,7 +10,7 @@ export default function Navbar() {
 
     if (currentStepIndex === 0) return null;
 
-    const navSteps = journeySteps.filter(step => step.id !== "welcome");
+    const navSteps = journeySteps.filter(step => !String(step.id || "").endsWith(":welcome"));
 
     return (
         <nav className="w-full bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">

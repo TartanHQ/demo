@@ -3,7 +3,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from "react";
-import { ALL_STEPS, STEP_COMPONENTS } from "./stepDefinitions";
+import { ALL_STEPS, STEP_COMPONENTS, makeJourneyStepId } from "./stepDefinitions";
 import type { Step, UserType, JourneyType } from "./stepDefinitions";
 
 
@@ -65,18 +65,46 @@ const getInitialStepsForJourney = (journeyType: JourneyType): Step[] => {
   switch (journeyType) {
     case "ntb": // New to Bank (Optimized Full Flow)
       // KYC choice is mandatory; nominee step becomes conditional.
-      stepIds = ["welcome", "kycChoice", "ekycHandler", "profileDetails", "reviewApplication", "videoKyc", "complete"];
+      stepIds = [
+        makeJourneyStepId("ntb", "welcome"),
+        makeJourneyStepId("ntb", "kycChoice"),
+        makeJourneyStepId("ntb", "ekycHandler"),
+        makeJourneyStepId("ntb", "profileDetails"),
+        makeJourneyStepId("ntb", "reviewApplication"),
+        makeJourneyStepId("ntb", "videoKyc"),
+        makeJourneyStepId("ntb", "complete"),
+      ];
       break;
     case "ntb-conversion": // NTB flow after auto-conversion (no OTP, no eKYC, no Video KYC)
-      stepIds = ["welcome", "kycChoice", "profileDetails", "reviewApplication", "complete"];
+      stepIds = [
+        makeJourneyStepId("ntb-conversion", "welcome"),
+        makeJourneyStepId("ntb-conversion", "kycChoice"),
+        makeJourneyStepId("ntb-conversion", "profileDetails"),
+        makeJourneyStepId("ntb-conversion", "reviewApplication"),
+        makeJourneyStepId("ntb-conversion", "complete"),
+      ];
       break;
     case "etb-nk": // Existing to Bank - With KYC
-      // ETB with KYC: Replace e-KYC step with verification, keep rest unchanged.
-      stepIds = ["welcome", "kycChoice", "conversionVerification", "etbKycProfile", "complete"];
+      // ETB with KYC: Aadhaar KYC must finish before net banking/debit card.
+      stepIds = [
+        makeJourneyStepId("etb-nk", "welcome"),
+        makeJourneyStepId("etb-nk", "ekycHandler"),
+        makeJourneyStepId("etb-nk", "kycChoice"),
+        makeJourneyStepId("etb-nk", "etbIncomeDeclarations"),
+        makeJourneyStepId("etb-nk", "conversionVerification"),
+        makeJourneyStepId("etb-nk", "etbKycProfile"),
+        makeJourneyStepId("etb-nk", "complete"),
+      ];
       break;
     case "etb": // Express Flow
-      // ETB Auto Conversion: Verify before profile in this flow.
-      stepIds = ["welcome", "autoConversion", "conversionVerification", "etbKycProfile", "complete"];
+      // ETB Auto Conversion: add income + declarations before verification.
+      stepIds = [
+        makeJourneyStepId("etb", "welcome"),
+        makeJourneyStepId("etb", "autoConversion"),
+        makeJourneyStepId("etb", "etbIncomeDeclarations"),
+        makeJourneyStepId("etb", "conversionVerification"),
+        makeJourneyStepId("etb", "complete"),
+      ];
       break;
   }
 
@@ -226,6 +254,20 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isResumeFlow, setIsResumeFlow] = useState(false);
   const inactivityTimer = useRef<NodeJS.Timeout | null>(null);
+  const [stepHistory, _setStepHistory] = useState<number[]>([]);
+
+  const setStepHistory = useCallback(
+    (updater: number[] | ((prev: number[]) => number[])) => {
+      _setStepHistory((prev) => {
+        const next = typeof updater === "function" ? (updater as (p: number[]) => number[])(prev) : updater;
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`${LOCAL_STORAGE_PREFIX}stepHistory`, JSON.stringify(next));
+        }
+        return next;
+      });
+    },
+    []
+  );
 
   // --- State-setting functions ---
   const setJourneySteps = useCallback((steps: Step[]) => {
@@ -268,22 +310,25 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
     // Physical KYC ends the journey immediately on the KYC selection step.
     // We truncate the journey to the steps completed so far.
     const steps = ["welcome", "kycChoice", "physicalKyc"]
+      .map((id) => makeJourneyStepId(journeyType, id))
       .map(id => ALL_STEPS[id])
       .filter(Boolean);
     setJourneySteps(steps);
     setStepIndex(Math.max(0, steps.length - 1));
+    setStepHistory([]);
     setBranchComponent(null);
-  }, [journeyType, setJourneySteps, setStepIndex, setBranchComponent]);
+  }, [journeyType, setJourneySteps, setStepIndex, setStepHistory, setBranchComponent]);
 
   const switchToDigitalKycFlow = useCallback(() => {
     if (!journeyType) return;
     const base = getInitialStepsForJourney(journeyType);
     setJourneySteps(base);
     // After KYC choice, proceed to next logical step (ekycHandler or profileDetails depending on journey)
-    const kycIndex = base.findIndex(s => s.id === "kycChoice");
+    const kycIndex = base.findIndex(s => s.id === makeJourneyStepId(journeyType, "kycChoice"));
     setStepIndex(kycIndex !== -1 ? kycIndex + 1 : 0);
+    setStepHistory([]);
     setBranchComponent(null);
-  }, [journeyType, setJourneySteps, setStepIndex, setBranchComponent]);
+  }, [journeyType, setJourneySteps, setStepIndex, setStepHistory, setBranchComponent]);
 
   const setUserType = useCallback((type: UserType) => {
     _setUserType(type);
@@ -324,6 +369,7 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem(`${LOCAL_STORAGE_PREFIX}prefilledData`);
       localStorage.removeItem(`${LOCAL_STORAGE_PREFIX}baselineData`);
       localStorage.removeItem(`${LOCAL_STORAGE_PREFIX}changedFields`);
+      localStorage.removeItem(`${LOCAL_STORAGE_PREFIX}stepHistory`);
     }
     _setUserType("ntb");
     _setJourneyType("ntb");
@@ -331,12 +377,13 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
     setPrefilledData({});
     setBaselineData({});
     setChangedFields([]);
+    setStepHistory([]);
     const newSteps = getInitialStepsForJourney("ntb");
     _setJourneySteps(newSteps);
     _setCurrentStepIndex(0);
     setBranchComponent(null); // Reset branch
     setBottomBarContent(null);
-  }, [setBranchComponent]);
+  }, [setBranchComponent, setStepHistory]);
 
   // --- Inactivity Timer Logic ---
   const resetInactivityTimer = useCallback(() => {
@@ -373,11 +420,18 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
         const savedPrefilledData = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}prefilledData`);
         const savedBaselineData = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}baselineData`);
         const savedChangedFields = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}changedFields`);
+        const savedStepHistory = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}stepHistory`);
 
         if (savedUserType && savedStepIndex !== null && savedJourneySteps) {
           const rawSteps = JSON.parse(savedJourneySteps) as Step[];
           // Migration: remove the old VCIP consent step if present.
-          let parsedSteps = rawSteps.filter((s) => s?.id !== "kycDetails" && s?.id !== "nomineeDetails");
+          let parsedSteps = rawSteps.filter(
+            (s) =>
+              s?.id !== "kycDetails" &&
+              s?.id !== "nomineeDetails" &&
+              !String(s?.id || "").endsWith(":kycDetails") &&
+              !String(s?.id || "").endsWith(":nomineeDetails")
+          );
           const parsedIndex = parseInt(savedStepIndex, 10);
 
           if (parsedSteps.length > 0 && parsedIndex < parsedSteps.length) {
@@ -388,10 +442,24 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
             let upgradedIndex: number | null = null;
             if (savedJourneyType === "etb") {
               const upgraded = getInitialStepsForJourney("etb");
+              const hasBase = (baseId: string) =>
+                parsedSteps.some((step) => step?.id === baseId || String(step?.id || "").endsWith(`:${baseId}`));
               const needsUpgrade =
-                !parsedSteps.some((step) => step.id === "conversionVerification") ||
-                parsedSteps.some((step) => step.id === "reviewApplication") ||
-                !parsedSteps.some((step) => step.id === "etbKycProfile");
+                !hasBase("conversionVerification") ||
+                hasBase("reviewApplication") ||
+                !hasBase("autoConversion") ||
+                !hasBase("etbIncomeDeclarations");
+              if (needsUpgrade) {
+                const currentId = parsedSteps[parsedIndex]?.id;
+                upgradedIndex = currentId ? upgraded.findIndex((step) => step.id === currentId) : -1;
+                parsedSteps = upgraded;
+              }
+            }
+            if (savedJourneyType === "etb-nk") {
+              const upgraded = getInitialStepsForJourney("etb-nk");
+              const hasBase = (baseId: string) =>
+                parsedSteps.some((step) => step?.id === baseId || String(step?.id || "").endsWith(`:${baseId}`));
+              const needsUpgrade = !hasBase("etbIncomeDeclarations");
               if (needsUpgrade) {
                 const currentId = parsedSteps[parsedIndex]?.id;
                 upgradedIndex = currentId ? upgraded.findIndex((step) => step.id === currentId) : -1;
@@ -420,9 +488,20 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
             } else {
               setChangedFields([]);
             }
+            if (savedStepHistory) {
+              const parsedHistory = JSON.parse(savedStepHistory);
+              if (Array.isArray(parsedHistory)) {
+                setStepHistory(parsedHistory.filter((idx) => Number.isInteger(idx) && idx >= 0 && idx < parsedSteps.length));
+              } else {
+                setStepHistory([]);
+              }
+            } else {
+              setStepHistory([]);
+            }
 
             // If it's a resume URL, we force them to verify OTP first (index 0)
             if (isResumeUrl) {
+              setStepHistory([]);
               _setCurrentStepIndex(0);
             } else if (typeof upgradedIndex === "number" && upgradedIndex >= 0) {
               _setCurrentStepIndex(upgradedIndex);
@@ -464,6 +543,7 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
     if (isResumeUrl && currentStepIndex === 0 && savedStepIndex) {
       const targetIndex = parseInt(savedStepIndex, 10);
       if (targetIndex > 0 && targetIndex < journeySteps.length) {
+        setStepHistory([]);
         setStepIndex(targetIndex);
         // Clean URL
         const url = new URL(window.location.href);
@@ -474,17 +554,26 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
     }
 
     if (currentStepIndex < journeySteps.length - 1) {
+      setStepHistory((prev) => [...prev, currentStepIndex]);
       setStepIndex(currentStepIndex + 1);
     }
-  }, [currentStepIndex, journeySteps.length, setBranchComponent, setStepIndex]);
+  }, [currentStepIndex, journeySteps.length, setBranchComponent, setStepHistory, setStepIndex]);
 
   const prevStep = useCallback(() => {
     setBranchComponent(null); // Go back to main flow
     setBottomBarContent(null);
-    if (currentStepIndex > 0) {
-      setStepIndex(currentStepIndex - 1);
-    }
-  }, [currentStepIndex, setBranchComponent, setStepIndex]);
+    setStepHistory((prev) => {
+      if (prev.length > 0) {
+        const target = prev[prev.length - 1];
+        setStepIndex(target);
+        return prev.slice(0, -1);
+      }
+      if (currentStepIndex > 0) {
+        setStepIndex(currentStepIndex - 1);
+      }
+      return prev;
+    });
+  }, [currentStepIndex, journeySteps, setBranchComponent, setStepHistory, setStepIndex]);
 
   const goToStep = useCallback((stepId: string) => {
     const newComponent = STEP_COMPONENTS[stepId];
@@ -496,12 +585,13 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
     const mainJourneyIndex = journeySteps.findIndex(s => s.id === stepId);
     if (mainJourneyIndex !== -1) {
       setBranchComponent(null);
+      setStepHistory((prev) => [...prev, currentStepIndex]);
       setStepIndex(mainJourneyIndex);
     } else {
       setBranchComponent(newComponent);
     }
     setBottomBarContent(null);
-  }, [journeySteps, setBranchComponent, setStepIndex]);
+  }, [currentStepIndex, journeySteps, setBranchComponent, setStepHistory, setStepIndex]);
 
   const startJourney = useCallback((type: JourneyType, prefilled?: Record<string, any>, startStepId?: string) => {
     _setJourneyType(type);
@@ -509,6 +599,7 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
     setJourneySteps(newSteps);
     const startIndex = startStepId ? newSteps.findIndex((step) => step.id === startStepId) : -1;
     setStepIndex(startIndex >= 0 ? startIndex : 0);
+    setStepHistory([]);
     setBranchComponent(null);
     const merged = { ...formData, ...(prefilled || {}) };
     _setFormData(merged);
@@ -524,7 +615,7 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
     setShowDashboard(false);
     setError(null);
     setBottomBarContent(null);
-  }, [formData, setJourneySteps, setStepIndex, setBranchComponent]);
+  }, [formData, setJourneySteps, setStepIndex, setStepHistory, setBranchComponent]);
 
   const CurrentStepComponent = journeySteps[currentStepIndex]
     ? STEP_COMPONENTS[journeySteps[currentStepIndex].id]

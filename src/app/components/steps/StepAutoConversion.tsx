@@ -2,12 +2,22 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useJourney } from "@/app/context/JourneyContext";
+import { makeJourneyStepId } from "@/app/context/stepDefinitions";
 import { Button } from "@/app/components/ui/button";
 import StepCard from "@/app/components/layout/StepCard";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 export default function StepAutoConversion() {
-  const { nextStep, updateFormData, formData, journeySteps, currentStepIndex, setBottomBarContent, startJourney } = useJourney();
+  const {
+    nextStep,
+    goToStep,
+    updateFormData,
+    formData,
+    journeySteps,
+    currentStepIndex,
+    setBottomBarContent,
+    journeyType,
+  } = useJourney();
   const [choice, setChoice] = useState<"yes" | "newSalary" | null>(formData.autoConvertConsent ?? null);
   const [status, setStatus] = useState<"idle" | "converting" | "success">(
     formData.autoConvertStatus ?? "idle"
@@ -34,22 +44,14 @@ export default function StepAutoConversion() {
     ];
   }, [formData.accounts]);
 
-  const canConvert = choice === "yes" && !!selectedAccountId;
-  const canContinue = status === "success" && !!selectedAccountId;
-
-  const runConversion = useCallback(() => {
-    setStatus("converting");
-    updateFormData({ autoConvertStatus: "converting", salaryConversionAccountId: selectedAccountId });
-    window.setTimeout(() => {
-      setStatus("success");
-      updateFormData({ autoConvertStatus: "success", salaryConversionAccountId: selectedAccountId });
-    }, 900);
-  }, [selectedAccountId, updateFormData]);
+  const canContinue = !!selectedAccountId;
 
   const handleContinue = useCallback(() => {
     if (!canContinue) return;
-    nextStep();
-  }, [canContinue, nextStep]);
+    updateFormData({ autoConvertStatus: "success", salaryConversionAccountId: selectedAccountId });
+    goToStep(makeJourneyStepId(journeyType || "etb", "complete"));
+  }, [canContinue, goToStep, journeyType, selectedAccountId, updateFormData]);
+    // }, [canContinue, nextStep, selectedAccountId, updateFormData]);
 
   useEffect(() => {
     setBottomBarContent(
@@ -119,43 +121,13 @@ export default function StepAutoConversion() {
             })}
           </div>
 
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-sm font-semibold text-gray-900">Conversion consent</p>
-            {status === "success" && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Converted
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex justify-end">
             <button
               type="button"
               onClick={() => {
-                setChoice("yes");
-                updateFormData({ autoConvertConsent: "yes" });
-                if (status !== "success" && selectedAccountId) runConversion();
-              }}
-              disabled={!selectedAccountId}
-              className={[
-                "h-11 rounded-[var(--radius)] border px-4 text-sm font-semibold transition-colors text-left",
-                !selectedAccountId ? "opacity-60 cursor-not-allowed" : "",
-                choice === "yes"
-                  ? "bg-[#004C8F] text-white border-[#004C8F]"
-                  : "bg-white text-slate-900 border-slate-200 hover:bg-slate-50",
-              ].join(" ")}
-            >
-              Yes, convert now
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                const updated = { ...formData, autoConvertConsent: "newSalary" };
                 setChoice("newSalary");
                 updateFormData({ autoConvertConsent: "newSalary" });
-                startJourney("etb-nk", updated, "kycChoice");
+                goToStep(makeJourneyStepId(journeyType || "etb", "etbIncomeDeclarations"));
               }}
               className={[
                 "h-11 rounded-[var(--radius)] border px-4 text-sm font-semibold transition-colors text-left",
@@ -167,25 +139,6 @@ export default function StepAutoConversion() {
               Create new salary account
             </button>
           </div>
-
-          {choice === "yes" && (
-            <div className="rounded-[var(--radius)] bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-700">
-              {!selectedAccountId ? (
-                <span className="font-medium text-slate-700">Please select an account to convert.</span>
-              ) : null}
-              {status === "converting" ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Converting your account…
-                </span>
-              ) : status === "success" ? (
-                <span className="inline-flex items-center gap-2 font-semibold text-emerald-700">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Your account has been converted to Salary successfully.
-                </span>
-              ) : null}
-            </div>
-          )}
 
           <p className="helper-text">
             You can also request conversion later from your account settings.

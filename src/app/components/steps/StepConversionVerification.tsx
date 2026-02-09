@@ -11,8 +11,22 @@ import { CheckCircle2, CreditCard, Globe } from "lucide-react";
 type VerificationMethod = "debit" | "netbanking";
 
 export default function StepConversionVerification() {
-  const { nextStep, prevStep, journeySteps, currentStepIndex, updateFormData, formData, setBottomBarContent } = useJourney();
-  const [method, setMethod] = useState<VerificationMethod>("debit");
+  const {
+    nextStep,
+    prevStep,
+    journeySteps,
+    currentStepIndex,
+    updateFormData,
+    formData,
+    setBottomBarContent,
+    journeyType,
+  } = useJourney();
+  const disableDebitVerification = !!formData.disableDebitVerification;
+  const isEtbAutoConversion = journeyType === "etb";
+  const [method, setMethod] = useState<VerificationMethod>(disableDebitVerification ? "netbanking" : "debit");
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
+    formData.salaryConversionAccountId ?? null
+  );
   const [cardLast4, setCardLast4] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardPin, setCardPin] = useState("");
@@ -41,6 +55,17 @@ export default function StepConversionVerification() {
     return `XXXXXXX${last3}`;
   }, [formData.mobileNumber]);
 
+  const accounts = useMemo(() => {
+    const fromData = Array.isArray(formData.accounts) ? formData.accounts : null;
+    if (fromData?.length) return fromData as Array<any>;
+
+    return [
+      { id: "acc-1", type: "Savings", numberMasked: "XX01 2345", branch: "Mumbai Main" },
+      { id: "acc-2", type: "Savings", numberMasked: "XX09 6781", branch: "Mumbai Main" },
+      { id: "acc-3", type: "Savings", numberMasked: "XX77 4402", branch: "Bengaluru HSR" },
+    ];
+  }, [formData.accounts]);
+
   const handleVerify = () => {
     setShowErrors(true);
     if (!isFormValid) return;
@@ -64,6 +89,69 @@ export default function StepConversionVerification() {
   useEffect(() => {
     setBottomBarContent(null);
   }, [setBottomBarContent]);
+
+  if (isEtbAutoConversion) {
+    return (
+      <StepCard step={stepLabel} maxWidth="2xl">
+        <div className="page-header">
+          <h1 className="page-title">Select Salary Account</h1>
+          <p className="page-subtitle">Choose the account you want to link for salary conversion.</p>
+        </div>
+        <div className="rounded-[var(--radius-lg)] border border-gray-200 bg-white p-4 space-y-4">
+          <div className="space-y-2">
+            {accounts.map((acc: any) => {
+              const active = selectedAccountId === acc.id;
+              return (
+                <button
+                  key={acc.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedAccountId(acc.id);
+                    updateFormData({ salaryConversionAccountId: acc.id });
+                  }}
+                  className={[
+                    "w-full rounded-[var(--radius-lg)] border p-3 text-left transition-colors",
+                    active ? "border-[#004C8F] bg-blue-50/40" : "border-slate-200 bg-white hover:bg-slate-50",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {acc.type} • {acc.numberMasked}
+                      </p>
+                      <p className="text-xs text-slate-600 mt-0.5">Branch: {acc.branch}</p>
+                    </div>
+                    <div
+                      className={[
+                        "h-5 w-5 rounded-full border-2 flex items-center justify-center",
+                        active ? "border-[#004C8F]" : "border-slate-300",
+                      ].join(" ")}
+                    >
+                      <div className={["h-2.5 w-2.5 rounded-full", active ? "bg-[#004C8F]" : "bg-transparent"].join(" ")} />
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              className="btn-primary h-11 px-6"
+              onClick={() => {
+                if (!selectedAccountId) return;
+                updateFormData({ autoConvertVerified: true, salaryConversionAccountId: selectedAccountId });
+                nextStep();
+              }}
+              disabled={!selectedAccountId}
+            >
+              Continue
+            </Button>
+          </div>
+        </div>
+      </StepCard>
+    );
+  }
 
   return (
     <StepCard step={stepLabel} maxWidth="3xl">
@@ -90,33 +178,35 @@ export default function StepConversionVerification() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => {
-                setMethod("debit");
-                setShowErrors(false);
-              }}
-              className={[
-                "w-full rounded-[var(--radius-lg)] border p-4 text-left transition-colors flex items-center gap-3",
-                method === "debit" ? "border-[#004C8F] bg-blue-50/40" : "border-slate-200 bg-white hover:bg-slate-50",
-              ].join(" ")}
-            >
-              <div className="h-10 w-10 rounded-full bg-violet-50 flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-violet-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-900">Debit Card</p>
-                <p className="text-xs text-slate-500">Requires last 4 digits, expiry date & PIN</p>
-              </div>
-              <div
+            {!disableDebitVerification && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMethod("debit");
+                  setShowErrors(false);
+                }}
                 className={[
-                  "h-5 w-5 rounded-full border-2 flex items-center justify-center",
-                  method === "debit" ? "border-[#004C8F]" : "border-slate-300",
+                  "w-full rounded-[var(--radius-lg)] border p-4 text-left transition-colors flex items-center gap-3",
+                  method === "debit" ? "border-[#004C8F] bg-blue-50/40" : "border-slate-200 bg-white hover:bg-slate-50",
                 ].join(" ")}
               >
-                <div className={["h-2.5 w-2.5 rounded-full", method === "debit" ? "bg-[#004C8F]" : "bg-transparent"].join(" ")} />
-              </div>
-            </button>
+                <div className="h-10 w-10 rounded-full bg-violet-50 flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-violet-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">Debit Card</p>
+                  <p className="text-xs text-slate-500">Requires last 4 digits, expiry date & PIN</p>
+                </div>
+                <div
+                  className={[
+                    "h-5 w-5 rounded-full border-2 flex items-center justify-center",
+                    method === "debit" ? "border-[#004C8F]" : "border-slate-300",
+                  ].join(" ")}
+                >
+                  <div className={["h-2.5 w-2.5 rounded-full", method === "debit" ? "bg-[#004C8F]" : "bg-transparent"].join(" ")} />
+                </div>
+              </button>
+            )}
 
             <button
               type="button"
