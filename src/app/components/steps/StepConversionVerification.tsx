@@ -19,6 +19,7 @@ export default function StepConversionVerification() {
     updateFormData,
     formData,
     setBottomBarContent,
+    goToStep,
   } = useJourney();
   const disableDebitVerification = !!formData.disableDebitVerification;
   const [method, setMethod] = useState<VerificationMethod>(disableDebitVerification ? "netbanking" : "debit");
@@ -68,6 +69,15 @@ export default function StepConversionVerification() {
       verificationMethod: method,
     });
     nextStep();
+  };
+
+  const handleBack = () => {
+    const previousStepId = journeySteps[Math.max(currentStepIndex - 1, 0)]?.id;
+    if (previousStepId && previousStepId !== journeySteps[currentStepIndex]?.id) {
+      goToStep(previousStepId);
+      return;
+    }
+    prevStep();
   };
 
   useEffect(() => {
@@ -215,7 +225,7 @@ export default function StepConversionVerification() {
 
             {!showOtp && (
               <div className="flex items-center gap-3">
-                <Button type="button" variant="outline" className="h-11 px-6" onClick={prevStep}>
+                <Button type="button" variant="outline" className="h-11 px-6" onClick={handleBack}>
                   Cancel
                 </Button>
                 <Button
@@ -246,7 +256,7 @@ export default function StepConversionVerification() {
                   />
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button type="button" variant="outline" className="h-11 px-6" onClick={prevStep}>
+                  <Button type="button" variant="outline" className="h-11 px-6" onClick={handleBack}>
                     Cancel
                   </Button>
                   <Button type="button" className="btn-primary h-11 px-6" onClick={handleOtpContinue} disabled={!isOtpValid}>
