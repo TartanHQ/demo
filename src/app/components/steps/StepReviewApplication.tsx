@@ -90,6 +90,28 @@ export default function StepReviewApplication() {
         return map[val] || val;
     };
 
+    const incomeRangeOptions = [
+        { value: "0-5L", label: "Up to ₹5L" },
+        { value: "5-10L", label: "₹5L – ₹10L" },
+        { value: "10-15L", label: "₹10L – ₹15L" },
+        { value: "15-25L", label: "₹15L – ₹25L" },
+        { value: "25L+", label: "₹25L+" },
+    ];
+
+    const maritalOptions = [
+        { value: "single", label: "Single" },
+        { value: "married", label: "Married" },
+        { value: "other", label: "Other" },
+    ];
+
+    const nomineeRelationOptions = [
+        { value: "spouse", label: "Spouse" },
+        { value: "father", label: "Father" },
+        { value: "mother", label: "Mother" },
+        { value: "son", label: "Son" },
+        { value: "daughter", label: "Daughter" },
+    ];
+
     const formatAddress = (address: {
         line1?: string;
         line2?: string;
@@ -145,34 +167,85 @@ export default function StepReviewApplication() {
 
     const ntbItems = useMemo(() => {
         if (!isNtb) return [];
-        const hasChanged = (key: string) => changedFields.includes(key);
+        const personalBaseline = formData.personalDetailsBaseline as Record<string, any> | undefined;
+        const areValuesEqual = (a: any, b: any) => {
+            if (typeof a === "object" || typeof b === "object") {
+                try {
+                    return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+                } catch {
+                    return false;
+                }
+            }
+            return a === b;
+        };
+        const hasChanged = (key: string, currentValue: any) =>
+            personalBaseline ? !areValuesEqual(currentValue, personalBaseline[key]) : changedFields.includes(key);
         const items: ReviewItem[] = [];
 
-        if (hasChanged("communicationEmail")) {
+        const statementEmailChanged = personalBaseline
+            ? !areValuesEqual(
+                  {
+                      usesPrimaryEmailForComms: formData.usesPrimaryEmailForComms,
+                      communicationEmail: formData.communicationEmail || "",
+                  },
+                  {
+                      usesPrimaryEmailForComms: personalBaseline.usesPrimaryEmailForComms,
+                      communicationEmail: personalBaseline.communicationEmail || "",
+                  }
+              )
+            : changedFields.includes("communicationEmail");
+
+        if (statementEmailChanged) {
             items.push({
                 id: "statementEmail",
                 label: "Statement & Notification Email",
                 value: reviewEmail || "—",
                 getDraft: () => ({
+                    usesPrimaryEmailForComms: formData.usesPrimaryEmailForComms,
                     communicationEmail: formData.communicationEmail || "",
                 }),
                 renderEdit: (draft, setDraft) => (
-                    <Input
-                        type="email"
-                        value={draft.communicationEmail || ""}
-                        onChange={(e) => setDraft({ ...draft, communicationEmail: e.target.value })}
-                        className="enterprise-input"
-                        placeholder="name@example.com"
-                    />
+                    <div className="space-y-3">
+                        <Select
+                            value={draft.usesPrimaryEmailForComms === false ? "different" : "primary"}
+                            onValueChange={(val) =>
+                                setDraft({
+                                    ...draft,
+                                    usesPrimaryEmailForComms: val !== "different",
+                                })
+                            }
+                        >
+                            <SelectTrigger className="enterprise-input flex items-center justify-between">
+                                <SelectValue placeholder="Select email preference" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                                <SelectItem value="primary" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                                    Use primary email
+                                </SelectItem>
+                                <SelectItem value="different" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                                    Use a different email
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {draft.usesPrimaryEmailForComms === false && (
+                            <Input
+                                type="email"
+                                value={draft.communicationEmail || ""}
+                                onChange={(e) => setDraft({ ...draft, communicationEmail: e.target.value })}
+                                className="enterprise-input"
+                                placeholder="name@example.com"
+                            />
+                        )}
+                    </div>
                 ),
                 onSave: (draft) =>
                     updateFormData({
-                        usesPrimaryEmailForComms: false,
-                        communicationEmail: draft.communicationEmail || "",
+                        usesPrimaryEmailForComms: draft.usesPrimaryEmailForComms !== false,
+                        communicationEmail: draft.usesPrimaryEmailForComms === false ? draft.communicationEmail || "" : "",
                     }),
             });
         }
-        if (hasChanged("fatherName")) {
+        if (hasChanged("fatherName", formData.fatherName)) {
             items.push({
                 id: "fatherName",
                 label: "Father's Name",
@@ -189,7 +262,7 @@ export default function StepReviewApplication() {
                 onSave: (draft) => updateFormData({ fatherName: draft.fatherName || "" }),
             });
         }
-        if (hasChanged("motherName")) {
+        if (hasChanged("motherName", formData.motherName)) {
             items.push({
                 id: "motherName",
                 label: "Mother's Name",
@@ -207,27 +280,213 @@ export default function StepReviewApplication() {
             });
         }
 
-        const communicationFields = [
-            "communicationAddressLine1",
-            "communicationAddressLine2",
-            "communicationAddressLine3",
-            "communicationAddressCity",
-            "communicationAddressState",
-            "communicationAddressPincode",
-        ];
-        if (communicationFields.some((key) => hasChanged(key))) {
-            const communicationAddressValue = formData.sameAsPermanentAddress
-                ? formData.currentAddress
-                    ? `${formData.currentAddress} (same as permanent)`
-                    : "Same as permanent address"
-                : formatAddress({
-                      line1: formData.communicationAddressLine1 || "",
-                      line2: formData.communicationAddressLine2 || "",
-                      line3: formData.communicationAddressLine3 || "",
-                      city: formData.communicationAddressCity || "",
-                      state: formData.communicationAddressState || "",
-                      pincode: formData.communicationAddressPincode || "",
-                  });
+        if (hasChanged("maritalStatus", formData.maritalStatus)) {
+            items.push({
+                id: "maritalStatus",
+                label: "Marital Status",
+                value: formData.maritalStatus
+                    ? String(formData.maritalStatus).charAt(0).toUpperCase() + String(formData.maritalStatus).slice(1)
+                    : "—",
+                getDraft: () => ({ maritalStatus: formData.maritalStatus || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Select
+                        value={draft.maritalStatus || ""}
+                        onValueChange={(val) => setDraft({ ...draft, maritalStatus: val })}
+                    >
+                        <SelectTrigger className="enterprise-input flex items-center justify-between">
+                            <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                            {maritalOptions.map((option) => (
+                                <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                    className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
+                                >
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ),
+                onSave: (draft) => updateFormData({ maritalStatus: draft.maritalStatus || "" }),
+            });
+        }
+
+        if (hasChanged("incomeRange", formData.incomeRange)) {
+            items.push({
+                id: "incomeRange",
+                label: "Annual Income Range",
+                value: formatIncomeRange(formData.incomeRange),
+                getDraft: () => ({ incomeRange: formData.incomeRange || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Select
+                        value={draft.incomeRange || ""}
+                        onValueChange={(val) => setDraft({ ...draft, incomeRange: val })}
+                    >
+                        <SelectTrigger className="enterprise-input flex items-center justify-between">
+                            <SelectValue placeholder="Select income range" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                            {incomeRangeOptions.map((option) => (
+                                <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                    className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
+                                >
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ),
+                onSave: (draft) => updateFormData({ incomeRange: draft.incomeRange || "" }),
+            });
+        }
+
+        if (hasChanged("isPep", formData.isPep)) {
+            items.push({
+                id: "isPep",
+                label: "Politically Exposed",
+                value: formData.isPep ? "Yes" : "No",
+                getDraft: () => ({ isPep: formData.isPep ? "yes" : "no" }),
+                renderEdit: (draft, setDraft) => (
+                    <Select value={draft.isPep || "no"} onValueChange={(val) => setDraft({ ...draft, isPep: val })}>
+                        <SelectTrigger className="enterprise-input flex items-center justify-between">
+                            <SelectValue placeholder="Select option" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                            <SelectItem value="yes" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                                Yes
+                            </SelectItem>
+                            <SelectItem value="no" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                                No
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                ),
+                onSave: (draft) => updateFormData({ isPep: draft.isPep === "yes" }),
+            });
+        }
+
+        if (hasChanged("isIndianNational", formData.isIndianNational)) {
+            items.push({
+                id: "isIndianNational",
+                label: "Indian National",
+                value: formData.isIndianNational ? "Yes" : "No",
+                getDraft: () => ({ isIndianNational: formData.isIndianNational ? "yes" : "no" }),
+                renderEdit: (draft, setDraft) => (
+                    <Select
+                        value={draft.isIndianNational || "yes"}
+                        onValueChange={(val) => setDraft({ ...draft, isIndianNational: val })}
+                    >
+                        <SelectTrigger className="enterprise-input flex items-center justify-between">
+                            <SelectValue placeholder="Select option" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                            <SelectItem value="yes" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                                Yes
+                            </SelectItem>
+                            <SelectItem value="no" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                                No
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                ),
+                onSave: (draft) => updateFormData({ isIndianNational: draft.isIndianNational === "yes" }),
+            });
+        }
+
+        if (hasChanged("isTaxResidentIndiaOnly", formData.isTaxResidentIndiaOnly)) {
+            items.push({
+                id: "isTaxResidentIndiaOnly",
+                label: "Tax Resident of India Only",
+                value: formData.isTaxResidentIndiaOnly ? "Yes" : "No",
+                getDraft: () => ({ isTaxResidentIndiaOnly: formData.isTaxResidentIndiaOnly ? "yes" : "no" }),
+                renderEdit: (draft, setDraft) => (
+                    <Select
+                        value={draft.isTaxResidentIndiaOnly || "yes"}
+                        onValueChange={(val) => setDraft({ ...draft, isTaxResidentIndiaOnly: val })}
+                    >
+                        <SelectTrigger className="enterprise-input flex items-center justify-between">
+                            <SelectValue placeholder="Select option" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                            <SelectItem value="yes" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                                Yes
+                            </SelectItem>
+                            <SelectItem value="no" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                                No
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                ),
+                onSave: (draft) => updateFormData({ isTaxResidentIndiaOnly: draft.isTaxResidentIndiaOnly === "yes" }),
+            });
+        }
+
+        const permanentAddressChanged = personalBaseline
+            ? !areValuesEqual(formData.currentAddress || "", personalBaseline.currentAddress || "")
+            : changedFields.includes("currentAddress");
+        if (permanentAddressChanged) {
+            items.push({
+                id: "permanentAddress",
+                label: "Permanent Address",
+                value: formData.currentAddress || "—",
+                getDraft: () => ({ currentAddress: formData.currentAddress || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Input
+                        value={draft.currentAddress || ""}
+                        onChange={(e) => setDraft({ ...draft, currentAddress: e.target.value })}
+                        className="enterprise-input"
+                        placeholder="Permanent address"
+                    />
+                ),
+                onSave: (draft) => updateFormData({ currentAddress: draft.currentAddress || "" }),
+            });
+        }
+
+        const communicationAddressValue = formatAddress({
+            line1: formData.communicationAddressLine1 || "",
+            line2: formData.communicationAddressLine2 || "",
+            line3: formData.communicationAddressLine3 || "",
+            city: formData.communicationAddressCity || "",
+            state: formData.communicationAddressState || "",
+            pincode: formData.communicationAddressPincode || "",
+        });
+        const baselineCommunicationAddress = personalBaseline
+            ? formatAddress({
+                  line1: personalBaseline.communicationAddressLine1 || "",
+                  line2: personalBaseline.communicationAddressLine2 || "",
+                  line3: personalBaseline.communicationAddressLine3 || "",
+                  city: personalBaseline.communicationAddressCity || "",
+                  state: personalBaseline.communicationAddressState || "",
+                  pincode: personalBaseline.communicationAddressPincode || "",
+              })
+            : "";
+        const communicationAddressChanged = personalBaseline
+            ? !areValuesEqual(communicationAddressValue, baselineCommunicationAddress) ||
+              !areValuesEqual(formData.sameAsPermanentAddress, personalBaseline.sameAsPermanentAddress)
+            : changedFields.some((key) =>
+                  [
+                      "communicationAddressLine1",
+                      "communicationAddressLine2",
+                      "communicationAddressLine3",
+                      "communicationAddressCity",
+                      "communicationAddressState",
+                      "communicationAddressPincode",
+                  ].includes(key)
+              );
+
+        if (formData.sameAsPermanentAddress === false && communicationAddressChanged) {
+            const communicationAddressValue = formatAddress({
+                line1: formData.communicationAddressLine1 || "",
+                line2: formData.communicationAddressLine2 || "",
+                line3: formData.communicationAddressLine3 || "",
+                city: formData.communicationAddressCity || "",
+                state: formData.communicationAddressState || "",
+                pincode: formData.communicationAddressPincode || "",
+            });
             items.push({
                 id: "communicationAddress",
                 label: "Communication Address",
@@ -317,7 +576,28 @@ export default function StepReviewApplication() {
         }
 
         const nomineeEnabled = !!formData.wantsNominee;
-        if (nomineeEnabled && hasChanged("nominees")) {
+        const permanentNomineeAddress = {
+            line1: formData.currentAddress || "",
+            line2: "",
+            line3: "",
+            city: "",
+            state: "",
+            pincode: "",
+        };
+        const communicationNomineeAddress = {
+            line1: formData.communicationAddressLine1 || "",
+            line2: formData.communicationAddressLine2 || "",
+            line3: formData.communicationAddressLine3 || "",
+            city: formData.communicationAddressCity || "",
+            state: formData.communicationAddressState || "",
+            pincode: formData.communicationAddressPincode || "",
+        };
+        const nomineesChanged = personalBaseline
+            ? !areValuesEqual(formData.nominees || [], personalBaseline.nominees || []) ||
+              !areValuesEqual(formData.wantsNominee, personalBaseline.wantsNominee)
+            : changedFields.includes("nominees") || changedFields.includes("wantsNominee");
+
+        if (nomineeEnabled && nomineesChanged) {
             const nominees = Array.isArray(formData.nominees) ? formData.nominees : [];
             nominees.forEach((nominee: any, index: number) => {
                 const addressValue = formatAddress({
@@ -334,6 +614,9 @@ export default function StepReviewApplication() {
                     value: [nominee.name, addressValue].filter(Boolean).join(" • ") || "—",
                     getDraft: () => ({
                         name: nominee.name || "",
+                        relation: nominee.relation || "",
+                        dob: nominee.dob || "",
+                        addressSource: nominee.addressSource || "custom",
                         addressLine1: nominee.addressLine1 || "",
                         addressLine2: nominee.addressLine2 || "",
                         addressLine3: nominee.addressLine3 || "",
@@ -341,79 +624,213 @@ export default function StepReviewApplication() {
                         addressState: nominee.addressState || "",
                         addressPincode: nominee.addressPincode || "",
                     }),
-                    renderEdit: (draft, setDraft) => (
-                        <div className="space-y-3">
-                            <Input
-                                value={draft.name || ""}
-                                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                                className="enterprise-input"
-                                placeholder="Nominee name"
-                            />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div className="md:col-span-2">
-                                    <Input
-                                        value={draft.addressLine1 || ""}
-                                        onChange={(e) => setDraft({ ...draft, addressLine1: e.target.value })}
-                                        className="enterprise-input"
-                                        placeholder="Line 1"
-                                    />
+                    renderEdit: (draft, setDraft) => {
+                        const resolvedAddress =
+                            draft.addressSource === "permanent"
+                                ? permanentNomineeAddress
+                                : draft.addressSource === "communication"
+                                ? communicationNomineeAddress
+                                : {
+                                      line1: draft.addressLine1 || "",
+                                      line2: draft.addressLine2 || "",
+                                      line3: draft.addressLine3 || "",
+                                      city: draft.addressCity || "",
+                                      state: draft.addressState || "",
+                                      pincode: draft.addressPincode || "",
+                                  };
+                        const addressDisabled = draft.addressSource !== "custom";
+                        return (
+                            <div className="space-y-3">
+                                <Select
+                                    value={draft.relation || ""}
+                                    onValueChange={(val) => {
+                                        const next: Record<string, any> = { ...draft, relation: val };
+                                        if (val === "father") {
+                                            next.name = formData.fatherName || "";
+                                        } else if (val === "mother") {
+                                            next.name = formData.motherName || "";
+                                        }
+                                        setDraft(next);
+                                    }}
+                                >
+                                    <SelectTrigger className="enterprise-input flex items-center justify-between">
+                                        <SelectValue placeholder="Select relationship" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                                        {nomineeRelationOptions.map((option) => (
+                                            <SelectItem
+                                                key={option.value}
+                                                value={option.value}
+                                                className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
+                                            >
+                                                {option.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Input
+                                    value={draft.name || ""}
+                                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                                    className="enterprise-input"
+                                    placeholder="Nominee name"
+                                />
+                                <Input
+                                    type="date"
+                                    value={draft.dob || ""}
+                                    onChange={(e) => setDraft({ ...draft, dob: e.target.value })}
+                                    className="enterprise-input"
+                                />
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        { value: "permanent", label: "Use permanent address" },
+                                        ...(formData.sameAsPermanentAddress
+                                            ? []
+                                            : [{ value: "communication", label: "Use communication address" }]),
+                                        { value: "custom", label: "Enter a different address" },
+                                    ].map((option) => (
+                                        <button
+                                            key={option.value}
+                                            type="button"
+                                            onClick={() =>
+                                                setDraft({
+                                                    ...draft,
+                                                    addressSource: option.value,
+                                                    addressLine1:
+                                                        option.value === "permanent"
+                                                            ? permanentNomineeAddress.line1
+                                                            : option.value === "communication"
+                                                            ? communicationNomineeAddress.line1
+                                                            : draft.addressLine1,
+                                                    addressLine2:
+                                                        option.value === "permanent"
+                                                            ? permanentNomineeAddress.line2
+                                                            : option.value === "communication"
+                                                            ? communicationNomineeAddress.line2
+                                                            : draft.addressLine2,
+                                                    addressLine3:
+                                                        option.value === "permanent"
+                                                            ? permanentNomineeAddress.line3
+                                                            : option.value === "communication"
+                                                            ? communicationNomineeAddress.line3
+                                                            : draft.addressLine3,
+                                                    addressCity:
+                                                        option.value === "permanent"
+                                                            ? permanentNomineeAddress.city
+                                                            : option.value === "communication"
+                                                            ? communicationNomineeAddress.city
+                                                            : draft.addressCity,
+                                                    addressState:
+                                                        option.value === "permanent"
+                                                            ? permanentNomineeAddress.state
+                                                            : option.value === "communication"
+                                                            ? communicationNomineeAddress.state
+                                                            : draft.addressState,
+                                                    addressPincode:
+                                                        option.value === "permanent"
+                                                            ? permanentNomineeAddress.pincode
+                                                            : option.value === "communication"
+                                                            ? communicationNomineeAddress.pincode
+                                                            : draft.addressPincode,
+                                                })
+                                            }
+                                            className={[
+                                                "h-8 px-3 rounded-[999px] text-xs font-semibold border transition-colors",
+                                                draft.addressSource === option.value
+                                                    ? "bg-slate-900 text-white border-slate-900"
+                                                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
+                                            ].join(" ")}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
                                 </div>
-                                <div className="md:col-span-2">
-                                    <Input
-                                        value={draft.addressLine2 || ""}
-                                        onChange={(e) => setDraft({ ...draft, addressLine2: e.target.value })}
-                                        className="enterprise-input"
-                                        placeholder="Line 2"
-                                    />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <Input
-                                        value={draft.addressLine3 || ""}
-                                        onChange={(e) => setDraft({ ...draft, addressLine3: e.target.value })}
-                                        className="enterprise-input"
-                                        placeholder="Line 3"
-                                    />
-                                </div>
-                                <div>
-                                    <Input
-                                        value={draft.addressCity || ""}
-                                        onChange={(e) => setDraft({ ...draft, addressCity: e.target.value })}
-                                        className="enterprise-input"
-                                        placeholder="City"
-                                    />
-                                </div>
-                                <div>
-                                    <Input
-                                        value={draft.addressState || ""}
-                                        onChange={(e) => setDraft({ ...draft, addressState: e.target.value })}
-                                        className="enterprise-input"
-                                        placeholder="State"
-                                    />
-                                </div>
-                                <div>
-                                    <Input
-                                        value={draft.addressPincode || ""}
-                                        onChange={(e) => setDraft({ ...draft, addressPincode: e.target.value })}
-                                        className="enterprise-input"
-                                        placeholder="Pincode"
-                                    />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div className="md:col-span-2">
+                                        <Input
+                                            value={resolvedAddress.line1 || ""}
+                                            onChange={(e) => setDraft({ ...draft, addressLine1: e.target.value })}
+                                            className="enterprise-input"
+                                            placeholder="Line 1"
+                                            disabled={addressDisabled}
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <Input
+                                            value={resolvedAddress.line2 || ""}
+                                            onChange={(e) => setDraft({ ...draft, addressLine2: e.target.value })}
+                                            className="enterprise-input"
+                                            placeholder="Line 2"
+                                            disabled={addressDisabled}
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <Input
+                                            value={resolvedAddress.line3 || ""}
+                                            onChange={(e) => setDraft({ ...draft, addressLine3: e.target.value })}
+                                            className="enterprise-input"
+                                            placeholder="Line 3"
+                                            disabled={addressDisabled}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Input
+                                            value={resolvedAddress.city || ""}
+                                            onChange={(e) => setDraft({ ...draft, addressCity: e.target.value })}
+                                            className="enterprise-input"
+                                            placeholder="City"
+                                            disabled={addressDisabled}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Input
+                                            value={resolvedAddress.state || ""}
+                                            onChange={(e) => setDraft({ ...draft, addressState: e.target.value })}
+                                            className="enterprise-input"
+                                            placeholder="State"
+                                            disabled={addressDisabled}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Input
+                                            value={resolvedAddress.pincode || ""}
+                                            onChange={(e) => setDraft({ ...draft, addressPincode: e.target.value })}
+                                            className="enterprise-input"
+                                            placeholder="Pincode"
+                                            disabled={addressDisabled}
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ),
+                        );
+                    },
                     onSave: (draft) => {
+                        const selectedAddress =
+                            draft.addressSource === "permanent"
+                                ? permanentNomineeAddress
+                                : draft.addressSource === "communication"
+                                ? communicationNomineeAddress
+                                : {
+                                      line1: draft.addressLine1 || "",
+                                      line2: draft.addressLine2 || "",
+                                      line3: draft.addressLine3 || "",
+                                      city: draft.addressCity || "",
+                                      state: draft.addressState || "",
+                                      pincode: draft.addressPincode || "",
+                                  };
                         const updated = nominees.map((item: any, idx: number) => {
                             if (idx !== index) return item;
                             return {
                                 ...item,
                                 name: draft.name || "",
-                                addressLine1: draft.addressLine1 || "",
-                                addressLine2: draft.addressLine2 || "",
-                                addressLine3: draft.addressLine3 || "",
-                                addressCity: draft.addressCity || "",
-                                addressState: draft.addressState || "",
-                                addressPincode: draft.addressPincode || "",
-                                addressSource: "custom",
+                                relation: draft.relation || "",
+                                dob: draft.dob || "",
+                                addressLine1: selectedAddress.line1 || "",
+                                addressLine2: selectedAddress.line2 || "",
+                                addressLine3: selectedAddress.line3 || "",
+                                addressCity: selectedAddress.city || "",
+                                addressState: selectedAddress.state || "",
+                                addressPincode: selectedAddress.pincode || "",
+                                addressSource: draft.addressSource || "custom",
                             };
                         });
                         const primaryNominee = updated[0];
@@ -428,6 +845,7 @@ export default function StepReviewApplication() {
                             nomineeAddressCity: primaryNominee?.addressCity || "",
                             nomineeAddressState: primaryNominee?.addressState || "",
                             nomineeAddressPincode: primaryNominee?.addressPincode || "",
+                            nomineeAddressSource: primaryNominee?.addressSource || "custom",
                         });
                     },
                 });
@@ -438,39 +856,416 @@ export default function StepReviewApplication() {
     }, [changedFields, formData, formatAddress, formatIncomeRange, isNtb, reviewEmail, updateFormData]);
 
     const sections = useMemo(() => {
-        if (!isNtb) {
-        const personal = [
-            { label: "Full Name", value: formData.name || "—" },
-            { label: "Mobile Number", value: formData.mobileNumber ? `+91 ${formData.mobileNumber}` : "—" },
-            { label: "Email", value: formData.email || "—" },
-            { label: "Date of Birth", value: formData.dob || "—" },
-            { label: "PAN", value: formData.pan || "—" },
-            { label: "Marital Status", value: formData.maritalStatus ? String(formData.maritalStatus).charAt(0).toUpperCase() + String(formData.maritalStatus).slice(1) : "—" },
-            { label: "Father's Name", value: formData.fatherName || "—" },
-            { label: "Mother's Name", value: formData.motherName || "—" },
-        ];
-
-        const addresses = [
-            { label: "Current Address", value: formData.currentAddress || "—" },
+        if (isNtb) return [];
+        const personal: ReviewItem[] = [
             {
-                label: "Communication Address",
-                value: (formData.sameAsCurrentAddress ? formData.currentAddress : formData.communicationAddress) || "—",
+                id: "fullName",
+                label: "Full Name",
+                value: formData.name || "—",
+                getDraft: () => ({ name: formData.name || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Input
+                        value={draft.name || ""}
+                        onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                        className="enterprise-input"
+                        placeholder="Full name"
+                    />
+                ),
+                onSave: (draft) => updateFormData({ name: draft.name || "" }),
+            },
+            {
+                id: "mobileNumber",
+                label: "Mobile Number",
+                value: formData.mobileNumber ? `+91 ${formData.mobileNumber}` : "—",
+                getDraft: () => ({ mobileNumber: formData.mobileNumber || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Input
+                        value={draft.mobileNumber || ""}
+                        onChange={(e) => setDraft({ ...draft, mobileNumber: e.target.value })}
+                        className="enterprise-input"
+                        placeholder="Mobile number"
+                    />
+                ),
+                onSave: (draft) => updateFormData({ mobileNumber: draft.mobileNumber || "" }),
+            },
+            {
+                id: "email",
+                label: "Email",
+                value: formData.email || "—",
+                getDraft: () => ({ email: formData.email || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Input
+                        type="email"
+                        value={draft.email || ""}
+                        onChange={(e) => setDraft({ ...draft, email: e.target.value })}
+                        className="enterprise-input"
+                        placeholder="name@example.com"
+                    />
+                ),
+                onSave: (draft) => updateFormData({ email: draft.email || "" }),
+            },
+            {
+                id: "dob",
+                label: "Date of Birth",
+                value: formData.dob || "—",
+                getDraft: () => ({ dob: formData.dob || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Input
+                        type="date"
+                        value={draft.dob || ""}
+                        onChange={(e) => setDraft({ ...draft, dob: e.target.value })}
+                        className="enterprise-input"
+                    />
+                ),
+                onSave: (draft) => updateFormData({ dob: draft.dob || "" }),
+            },
+            {
+                id: "pan",
+                label: "PAN",
+                value: formData.pan || "—",
+                getDraft: () => ({ pan: formData.pan || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Input
+                        value={draft.pan || ""}
+                        onChange={(e) => setDraft({ ...draft, pan: e.target.value })}
+                        className="enterprise-input"
+                        placeholder="PAN"
+                    />
+                ),
+                onSave: (draft) => updateFormData({ pan: draft.pan || "" }),
+            },
+            {
+                id: "maritalStatus",
+                label: "Marital Status",
+                value: formData.maritalStatus
+                    ? String(formData.maritalStatus).charAt(0).toUpperCase() + String(formData.maritalStatus).slice(1)
+                    : "—",
+                getDraft: () => ({ maritalStatus: formData.maritalStatus || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Select value={draft.maritalStatus || ""} onValueChange={(val) => setDraft({ ...draft, maritalStatus: val })}>
+                        <SelectTrigger className="enterprise-input flex items-center justify-between">
+                            <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                            {maritalOptions.map((option) => (
+                                <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                    className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
+                                >
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ),
+                onSave: (draft) => updateFormData({ maritalStatus: draft.maritalStatus || "" }),
+            },
+            {
+                id: "fatherName",
+                label: "Father's Name",
+                value: formData.fatherName || "—",
+                getDraft: () => ({ fatherName: formData.fatherName || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Input
+                        value={draft.fatherName || ""}
+                        onChange={(e) => setDraft({ ...draft, fatherName: e.target.value })}
+                        className="enterprise-input"
+                        placeholder="Father's name"
+                    />
+                ),
+                onSave: (draft) => updateFormData({ fatherName: draft.fatherName || "" }),
+            },
+            {
+                id: "motherName",
+                label: "Mother's Name",
+                value: formData.motherName || "—",
+                getDraft: () => ({ motherName: formData.motherName || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Input
+                        value={draft.motherName || ""}
+                        onChange={(e) => setDraft({ ...draft, motherName: e.target.value })}
+                        className="enterprise-input"
+                        placeholder="Mother's name"
+                    />
+                ),
+                onSave: (draft) => updateFormData({ motherName: draft.motherName || "" }),
             },
         ];
 
-        const profile = [
-            { label: "Annual Income Range", value: formatIncomeRange(formData.incomeRange) },
-            { label: "KYC Method", value: formData.kycMethod === "physicalKyc" ? "Physical KYC" : "Digital KYC" },
+        const addresses: ReviewItem[] = [
+            {
+                id: "currentAddress",
+                label: "Current Address",
+                value: formData.currentAddress || "—",
+                getDraft: () => ({ currentAddress: formData.currentAddress || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Input
+                        value={draft.currentAddress || ""}
+                        onChange={(e) => setDraft({ ...draft, currentAddress: e.target.value })}
+                        className="enterprise-input"
+                        placeholder="Current address"
+                    />
+                ),
+                onSave: (draft) => updateFormData({ currentAddress: draft.currentAddress || "" }),
+            },
+            {
+                id: "communicationAddress",
+                label: "Communication Address",
+                value: (formData.sameAsCurrentAddress ? formData.currentAddress : formData.communicationAddress) || "—",
+                getDraft: () => ({
+                    line1: formData.communicationAddressLine1 || "",
+                    line2: formData.communicationAddressLine2 || "",
+                    line3: formData.communicationAddressLine3 || "",
+                    city: formData.communicationAddressCity || "",
+                    state: formData.communicationAddressState || "",
+                    pincode: formData.communicationAddressPincode || "",
+                }),
+                renderEdit: (draft, setDraft) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="md:col-span-2">
+                            <Input
+                                value={draft.line1 || ""}
+                                onChange={(e) => setDraft({ ...draft, line1: e.target.value })}
+                                className="enterprise-input"
+                                placeholder="Line 1"
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <Input
+                                value={draft.line2 || ""}
+                                onChange={(e) => setDraft({ ...draft, line2: e.target.value })}
+                                className="enterprise-input"
+                                placeholder="Line 2"
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <Input
+                                value={draft.line3 || ""}
+                                onChange={(e) => setDraft({ ...draft, line3: e.target.value })}
+                                className="enterprise-input"
+                                placeholder="Line 3"
+                            />
+                        </div>
+                        <div>
+                            <Input
+                                value={draft.city || ""}
+                                onChange={(e) => setDraft({ ...draft, city: e.target.value })}
+                                className="enterprise-input"
+                                placeholder="City"
+                            />
+                        </div>
+                        <div>
+                            <Input
+                                value={draft.state || ""}
+                                onChange={(e) => setDraft({ ...draft, state: e.target.value })}
+                                className="enterprise-input"
+                                placeholder="State"
+                            />
+                        </div>
+                        <div>
+                            <Input
+                                value={draft.pincode || ""}
+                                onChange={(e) => setDraft({ ...draft, pincode: e.target.value })}
+                                className="enterprise-input"
+                                placeholder="Pincode"
+                            />
+                        </div>
+                    </div>
+                ),
+                onSave: (draft) =>
+                    updateFormData({
+                        sameAsPermanentAddress: false,
+                        communicationAddressLine1: draft.line1 || "",
+                        communicationAddressLine2: draft.line2 || "",
+                        communicationAddressLine3: draft.line3 || "",
+                        communicationAddressCity: draft.city || "",
+                        communicationAddressState: draft.state || "",
+                        communicationAddressPincode: draft.pincode || "",
+                        communicationAddress: formatAddress({
+                            line1: draft.line1 || "",
+                            line2: draft.line2 || "",
+                            line3: draft.line3 || "",
+                            city: draft.city || "",
+                            state: draft.state || "",
+                            pincode: draft.pincode || "",
+                        }),
+                    }),
+            },
+        ];
+
+        const profile: ReviewItem[] = [
+            {
+                id: "incomeRange",
+                label: "Annual Income Range",
+                value: formatIncomeRange(formData.incomeRange),
+                getDraft: () => ({ incomeRange: formData.incomeRange || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Select value={draft.incomeRange || ""} onValueChange={(val) => setDraft({ ...draft, incomeRange: val })}>
+                        <SelectTrigger className="enterprise-input flex items-center justify-between">
+                            <SelectValue placeholder="Select income range" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                            {incomeRangeOptions.map((option) => (
+                                <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                    className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
+                                >
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ),
+                onSave: (draft) => updateFormData({ incomeRange: draft.incomeRange || "" }),
+            },
+            {
+                id: "kycMethod",
+                label: "KYC Method",
+                value: formData.kycMethod === "physicalKyc" ? "Physical KYC" : "Digital KYC",
+                getDraft: () => ({ kycMethod: formData.kycMethod || "" }),
+                renderEdit: (draft, setDraft) => (
+                    <Select value={draft.kycMethod || ""} onValueChange={(val) => setDraft({ ...draft, kycMethod: val })}>
+                        <SelectTrigger className="enterprise-input flex items-center justify-between">
+                            <SelectValue placeholder="Select KYC method" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                            <SelectItem value="digitalKyc" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                                Digital KYC
+                            </SelectItem>
+                            <SelectItem value="physicalKyc" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                                Physical KYC
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                ),
+                onSave: (draft) => updateFormData({ kycMethod: draft.kycMethod || "" }),
+            },
         ];
 
         const nomineeEnabled = !!formData.wantsNominee;
-        const nominee = nomineeEnabled
+        const nominee: ReviewItem[] = nomineeEnabled
             ? [
-                { label: "Nominee Name", value: formData.nomineeName || "—" },
-                { label: "Relationship", value: formData.nomineeRelation ? String(formData.nomineeRelation).charAt(0).toUpperCase() + String(formData.nomineeRelation).slice(1) : "—" },
-                { label: "Nominee DOB", value: formData.nomineeDob || "—" },
-                { label: "Nominee Address", value: formData.nomineeAddress || "—" },
-            ]
+                  {
+                      id: "nominee",
+                      label: "Nominee",
+                      value: [formData.nomineeName, formData.nomineeAddress].filter(Boolean).join(" • ") || "—",
+                      getDraft: () => ({
+                          name: formData.nomineeName || "",
+                          relation: formData.nomineeRelation || "",
+                          dob: formData.nomineeDob || "",
+                          addressLine1: formData.nomineeAddressLine1 || "",
+                          addressLine2: formData.nomineeAddressLine2 || "",
+                          addressLine3: formData.nomineeAddressLine3 || "",
+                          addressCity: formData.nomineeAddressCity || "",
+                          addressState: formData.nomineeAddressState || "",
+                          addressPincode: formData.nomineeAddressPincode || "",
+                      }),
+                      renderEdit: (draft, setDraft) => (
+                          <div className="space-y-3">
+                              <Select value={draft.relation || ""} onValueChange={(val) => setDraft({ ...draft, relation: val })}>
+                                  <SelectTrigger className="enterprise-input flex items-center justify-between">
+                                      <SelectValue placeholder="Select relationship" />
+                                  </SelectTrigger>
+                                  <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                                      {nomineeRelationOptions.map((option) => (
+                                          <SelectItem
+                                              key={option.value}
+                                              value={option.value}
+                                              className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
+                                          >
+                                              {option.label}
+                                          </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                              </Select>
+                              <Input
+                                  value={draft.name || ""}
+                                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                                  className="enterprise-input"
+                                  placeholder="Nominee name"
+                              />
+                              <Input
+                                  type="date"
+                                  value={draft.dob || ""}
+                                  onChange={(e) => setDraft({ ...draft, dob: e.target.value })}
+                                  className="enterprise-input"
+                              />
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div className="md:col-span-2">
+                                      <Input
+                                          value={draft.addressLine1 || ""}
+                                          onChange={(e) => setDraft({ ...draft, addressLine1: e.target.value })}
+                                          className="enterprise-input"
+                                          placeholder="Line 1"
+                                      />
+                                  </div>
+                                  <div className="md:col-span-2">
+                                      <Input
+                                          value={draft.addressLine2 || ""}
+                                          onChange={(e) => setDraft({ ...draft, addressLine2: e.target.value })}
+                                          className="enterprise-input"
+                                          placeholder="Line 2"
+                                      />
+                                  </div>
+                                  <div className="md:col-span-2">
+                                      <Input
+                                          value={draft.addressLine3 || ""}
+                                          onChange={(e) => setDraft({ ...draft, addressLine3: e.target.value })}
+                                          className="enterprise-input"
+                                          placeholder="Line 3"
+                                      />
+                                  </div>
+                                  <div>
+                                      <Input
+                                          value={draft.addressCity || ""}
+                                          onChange={(e) => setDraft({ ...draft, addressCity: e.target.value })}
+                                          className="enterprise-input"
+                                          placeholder="City"
+                                      />
+                                  </div>
+                                  <div>
+                                      <Input
+                                          value={draft.addressState || ""}
+                                          onChange={(e) => setDraft({ ...draft, addressState: e.target.value })}
+                                          className="enterprise-input"
+                                          placeholder="State"
+                                      />
+                                  </div>
+                                  <div>
+                                      <Input
+                                          value={draft.addressPincode || ""}
+                                          onChange={(e) => setDraft({ ...draft, addressPincode: e.target.value })}
+                                          className="enterprise-input"
+                                          placeholder="Pincode"
+                                      />
+                                  </div>
+                              </div>
+                          </div>
+                      ),
+                      onSave: (draft) =>
+                          updateFormData({
+                              nomineeName: draft.name || "",
+                              nomineeRelation: draft.relation || "",
+                              nomineeDob: draft.dob || "",
+                              nomineeAddressLine1: draft.addressLine1 || "",
+                              nomineeAddressLine2: draft.addressLine2 || "",
+                              nomineeAddressLine3: draft.addressLine3 || "",
+                              nomineeAddressCity: draft.addressCity || "",
+                              nomineeAddressState: draft.addressState || "",
+                              nomineeAddressPincode: draft.addressPincode || "",
+                              nomineeAddress: formatAddress({
+                                  line1: draft.addressLine1 || "",
+                                  line2: draft.addressLine2 || "",
+                                  line3: draft.addressLine3 || "",
+                                  city: draft.addressCity || "",
+                                  state: draft.addressState || "",
+                                  pincode: draft.addressPincode || "",
+                              }),
+                          }),
+                  },
+              ]
             : [];
 
         return [
@@ -479,125 +1274,7 @@ export default function StepReviewApplication() {
             { title: "Profile", items: profile },
             ...(nomineeEnabled ? [{ title: "Nominee", items: nominee }] : []),
         ];
-        }
-
-        const hasChanged = (key: string) => changedFields.includes(key);
-
-        const items: { title: string; items: { label: string; value: string }[] }[] = [];
-        const personalItems: { label: string; value: string }[] = [];
-
-        if (hasChanged("name")) personalItems.push({ label: "Full Name", value: formData.name });
-        if (hasChanged("mobileNumber")) personalItems.push({ label: "Mobile Number", value: `+91 ${formData.mobileNumber}` });
-        if (hasChanged("dob")) personalItems.push({ label: "Date of Birth", value: formData.dob });
-        if (hasChanged("pan")) personalItems.push({ label: "PAN", value: formData.pan });
-        if (hasChanged("maritalStatus")) {
-            personalItems.push({
-                label: "Marital Status",
-                value: String(formData.maritalStatus).charAt(0).toUpperCase() + String(formData.maritalStatus).slice(1),
-            });
-        }
-        if (hasChanged("fatherName")) personalItems.push({ label: "Father's Name", value: formData.fatherName });
-        if (hasChanged("motherName")) personalItems.push({ label: "Mother's Name", value: formData.motherName });
-
-        if (hasChanged("email")) {
-            personalItems.push({ label: "Email", value: formData.email });
-        } else if (formData.usesPrimaryEmailForComms === false && hasChanged("communicationEmail")) {
-            personalItems.push({ label: "Communication Email", value: formData.communicationEmail });
-        }
-
-        if (personalItems.length) items.push({ title: "Personal & Identity", items: personalItems });
-
-        const addressFields = [
-            "permanentAddressLine1",
-            "permanentAddressLine2",
-            "permanentAddressLine3",
-            "permanentAddressCity",
-            "permanentAddressState",
-            "permanentAddressPincode",
-        ];
-
-        const communicationFields = [
-            "communicationAddressLine1",
-            "communicationAddressLine2",
-            "communicationAddressLine3",
-            "communicationAddressCity",
-            "communicationAddressState",
-            "communicationAddressPincode",
-        ];
-
-        const permanentAddressChanged = addressFields.some((key) => hasChanged(key));
-        const communicationAddressChanged =
-            formData.sameAsPermanentAddress === false &&
-            communicationFields.some((key) => hasChanged(key));
-
-        const addressItems: { label: string; value: string }[] = [];
-        if (permanentAddressChanged) {
-            addressItems.push({
-                label: "Permanent Address",
-                value: formatAddress({
-                    line1: formData.permanentAddressLine1 || "",
-                    line2: formData.permanentAddressLine2 || "",
-                    line3: formData.permanentAddressLine3 || "",
-                    city: formData.permanentAddressCity || "",
-                    state: formData.permanentAddressState || "",
-                    pincode: formData.permanentAddressPincode || "",
-                }),
-            });
-        }
-        if (communicationAddressChanged) {
-            addressItems.push({
-                label: "Communication Address",
-                value: formatAddress({
-                    line1: formData.communicationAddressLine1 || "",
-                    line2: formData.communicationAddressLine2 || "",
-                    line3: formData.communicationAddressLine3 || "",
-                    city: formData.communicationAddressCity || "",
-                    state: formData.communicationAddressState || "",
-                    pincode: formData.communicationAddressPincode || "",
-                }),
-            });
-        }
-        if (addressItems.length) items.push({ title: "Addresses", items: addressItems });
-
-        const profileItems: { label: string; value: string }[] = [];
-        if (hasChanged("incomeRange")) {
-            profileItems.push({ label: "Annual Income Range", value: formatIncomeRange(formData.incomeRange) });
-        }
-        if (!hideBooleanChanges && hasChanged("kycMethod")) {
-            profileItems.push({ label: "KYC Method", value: formData.kycMethod === "physicalKyc" ? "Physical KYC" : "Digital KYC" });
-        }
-        if (profileItems.length) items.push({ title: "Profile", items: profileItems });
-
-        const declarationsItems: { label: string; value: string }[] = [];
-        if (!hideBooleanChanges && hasChanged("isPep")) declarationsItems.push({ label: "Politically Exposed", value: formData.isPep ? "Yes" : "No" });
-        if (!hideBooleanChanges && hasChanged("isIndianNational")) declarationsItems.push({ label: "Indian National", value: formData.isIndianNational ? "Yes" : "No" });
-        if (!hideBooleanChanges && hasChanged("isTaxResidentIndiaOnly")) declarationsItems.push({ label: "Tax Resident of India Only", value: formData.isTaxResidentIndiaOnly ? "Yes" : "No" });
-        if (declarationsItems.length) items.push({ title: "Declarations", items: declarationsItems });
-
-        const nomineeEnabled = !!formData.wantsNominee;
-        const nominees = Array.isArray(formData.nominees) ? formData.nominees : [];
-        if (!hideBooleanChanges && nomineeEnabled && nominees.length && (hasChanged("nominees") || hasChanged("wantsNominee"))) {
-            const nomineeItems = nominees.flatMap((nominee: any, index: number) => {
-                const addressValue = formatAddress({
-                    line1: nominee.addressLine1 || "",
-                    line2: nominee.addressLine2 || "",
-                    line3: nominee.addressLine3 || "",
-                    city: nominee.addressCity || "",
-                    state: nominee.addressState || "",
-                    pincode: nominee.addressPincode || "",
-                });
-                return [
-                    { label: `Nominee ${index + 1} Name`, value: nominee.name || "—" },
-                    { label: `Nominee ${index + 1} Relationship`, value: nominee.relation ? String(nominee.relation).charAt(0).toUpperCase() + String(nominee.relation).slice(1) : "—" },
-                    { label: `Nominee ${index + 1} DOB`, value: nominee.dob || "—" },
-                    { label: `Nominee ${index + 1} Address`, value: addressValue || "—" },
-                ];
-            });
-            items.push({ title: "Nominee", items: nomineeItems });
-        }
-
-        return items;
-    }, [changedFields, formData, hideBooleanChanges, isNtb]);
+    }, [formData, formatAddress, formatIncomeRange, isNtb, updateFormData]);
 
     useEffect(() => {
         if (!isNtb) return;
@@ -678,12 +1355,41 @@ export default function StepReviewApplication() {
                             <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">{section.title}</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-                            {section.items.map((item) => (
-                                <div key={item.label} className="px-5 py-4 border-t border-gray-100 md:border-t-0 md:border-r last:md:border-r-0">
-                                    <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{item.label}</p>
-                                    <p className="text-sm font-semibold text-gray-900 mt-1 whitespace-pre-wrap break-words">{item.value}</p>
-                                </div>
-                            ))}
+                            {section.items.map((item) => {
+                                const isEditing = !!editState[item.id];
+                                const draft = drafts[item.id] || item.getDraft?.() || {};
+                                return (
+                                    <div key={item.id} className="px-5 py-4 border-t border-gray-100 md:border-t-0 md:border-r last:md:border-r-0">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{item.label}</p>
+                                            {item.renderEdit && !isEditing && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => startEdit(item.id, item.getDraft ? item.getDraft() : {})}
+                                                    className="text-[11px] font-semibold text-hdfc-blue hover:underline"
+                                                >
+                                                    Edit
+                                                </button>
+                                            )}
+                                        </div>
+                                        {isEditing && item.renderEdit ? (
+                                            <div className="mt-3 space-y-3">
+                                                {item.renderEdit(draft, (next) => setDrafts((prev) => ({ ...prev, [item.id]: next })))}
+                                                <div className="flex items-center gap-2">
+                                                    <Button type="button" className="btn-primary h-8 px-4 text-xs" onClick={() => saveEdit(item.id, item.onSave)}>
+                                                        Save
+                                                    </Button>
+                                                    <Button type="button" variant="outline" className="h-8 px-4 text-xs" onClick={() => cancelEdit(item.id)}>
+                                                        Cancel
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm font-semibold text-gray-900 mt-1 whitespace-pre-wrap break-words">{item.value}</p>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                     ))

@@ -18,7 +18,7 @@ type AddressFields = {
   pincode: string;
 };
 
-type NomineeAddressSource = "communication" | "permanent" | "custom";
+type NomineeAddressSource = "none" | "communication" | "permanent" | "custom";
 
 type Nominee = {
   name: string;
@@ -45,7 +45,7 @@ const createEmptyNominee = (): Nominee => ({
   addressCity: "",
   addressState: "",
   addressPincode: "",
-  addressSource: "custom",
+  addressSource: "none",
 });
 
 const PINCODE_LOOKUP: Record<string, { city: string; state: string }> = {
@@ -101,7 +101,7 @@ export default function StepCombinedDetails() {
   const [communicationEmail, setCommunicationEmail] = useState(formData.communicationEmail || "");
   const [fatherName, setFatherName] = useState(formData.fatherName || "");
   const [motherName, setMotherName] = useState(formData.motherName || "");
-  const [maritalStatus, setMaritalStatus] = useState(formData.maritalStatus || "");
+  const [maritalStatus, setMaritalStatus] = useState("");
   const [incomeRange, setIncomeRange] = useState(formData.incomeRange || "");
   const [isPep, setIsPep] = useState<boolean>(!!formData.isPep);
   const [isIndianNational, setIsIndianNational] = useState<boolean>(formData.isIndianNational !== false);
@@ -141,7 +141,7 @@ export default function StepCombinedDetails() {
         nameLocked: !!nominee?.name,
         addressSource:
           nominee.addressSource ||
-          (nominee.sameAsCommunicationAddress ? "communication" : "custom"),
+          (nominee.sameAsCommunicationAddress ? "communication" : "none"),
       }));
     }
     if (formData.nomineeName || formData.nomineeRelation || formData.nomineeDob || formData.nomineeAddress) {
@@ -158,7 +158,8 @@ export default function StepCombinedDetails() {
           addressCity: formData.nomineeAddressCity || "",
           addressState: formData.nomineeAddressState || "",
           addressPincode: formData.nomineeAddressPincode || "",
-          addressSource: formData.nomineeAddressSource || (formData.nomineeSameAsCommunicationAddress ? "communication" : "custom"),
+          addressSource:
+            formData.nomineeAddressSource || (formData.nomineeSameAsCommunicationAddress ? "communication" : "none"),
         },
       ];
     }
@@ -254,6 +255,7 @@ export default function StepCombinedDetails() {
     !!nominee.addressPincode;
 
   const isNomineeComplete = (nominee: Nominee) =>
+    nominee.addressSource !== "none" &&
     !!nominee.name &&
     !!nominee.relation &&
     !!nominee.dob &&
@@ -278,6 +280,64 @@ export default function StepCombinedDetails() {
     (sameAsPermanentAddress || isAddressComplete(communicationAddress)) &&
     wantsNominee !== null &&
     (!wantsNominee || (nominees.length > 0 && nominees.every(isNomineeComplete)));
+
+  const buildPersonalDetailsBaseline = useCallback(() => {
+    const resolvedCommunicationAddress = sameAsPermanentAddress ? permanentAddressFieldsForComm : communicationAddress;
+    const resolvedNominees = wantsNominee
+      ? nominees.map((nominee) =>
+          nominee.addressSource === "communication"
+            ? { ...nominee, ...communicationAddressForNominee }
+            : nominee.addressSource === "permanent"
+            ? { ...nominee, ...permanentAddressForNominee }
+            : nominee
+        )
+      : [];
+
+    return {
+      usesPrimaryEmailForComms,
+      communicationEmail: usesPrimaryEmailForComms ? "" : communicationEmail,
+      fatherName,
+      motherName,
+      maritalStatus,
+      incomeRange,
+      sameAsPermanentAddress,
+      currentAddress: permanentAddressText,
+      communicationAddressLine1: resolvedCommunicationAddress.line1,
+      communicationAddressLine2: resolvedCommunicationAddress.line2,
+      communicationAddressLine3: resolvedCommunicationAddress.line3,
+      communicationAddressCity: resolvedCommunicationAddress.city,
+      communicationAddressState: resolvedCommunicationAddress.state,
+      communicationAddressPincode: resolvedCommunicationAddress.pincode,
+      wantsNominee: wantsNominee === true,
+      nominees: resolvedNominees,
+      isPep,
+      isIndianNational,
+      isTaxResidentIndiaOnly,
+    };
+  }, [
+    communicationAddress,
+    communicationAddressForNominee,
+    communicationEmail,
+    fatherName,
+    incomeRange,
+    isIndianNational,
+    isPep,
+    isTaxResidentIndiaOnly,
+    maritalStatus,
+    motherName,
+    nominees,
+    permanentAddressFieldsForComm,
+    permanentAddressForNominee,
+    permanentAddressText,
+    sameAsPermanentAddress,
+    usesPrimaryEmailForComms,
+    wantsNominee,
+  ]);
+
+  useEffect(() => {
+    if (formData.personalDetailsBaseline) return;
+    updateFormData({ personalDetailsBaseline: buildPersonalDetailsBaseline() });
+  }, [buildPersonalDetailsBaseline, formData.personalDetailsBaseline, updateFormData]);
 
   const handleContinue = useCallback(() => {
     setShowErrors(true);
