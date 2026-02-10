@@ -50,6 +50,10 @@ function getJourneyCategory(journey: string): {
 export default function Dashboard() {
     const [invitedEmployeeIds, setInvitedEmployeeIds] = React.useState<Record<string, boolean>>({});
 
+    const handleRefreshInvites = React.useCallback(() => {
+        setInvitedEmployeeIds({});
+    }, []);
+
     const employees = [
         // Synthetic, realistic-looking employee master data (no real PII)
         { id: "CBS-240013", name: "Aarav Mehta", phone: "9876543210", email: "aarav.mehta@cholabusiness.example", journey: "ntb" as JourneyKey, inviteEndpoint: "/api/invites?variant=primary", dob: "1994-03-12", pan: "QWERT1234P", fatherName: "Rakesh Mehta", motherName: "Neeta Mehta", currentAddress: "Flat 12B, HSR Layout, Bengaluru 560102", income: "1450000" },
@@ -171,7 +175,11 @@ export default function Dashboard() {
                         <div className="w-9 h-5 bg-[#e2e8f0] rounded-full relative cursor-pointer group">
                             <div className="w-4 h-4 bg-white rounded-full absolute top-0.5 left-0.5 shadow-sm transition-transform group-hover:scale-105" />
                         </div>
-                        <button className="h-10 px-4 border border-[#e2e8f0] bg-white text-[#3b82f6] font-medium text-sm rounded-md hover:bg-slate-50 transition-colors">
+                        <button
+                            type="button"
+                            onClick={handleRefreshInvites}
+                            className="h-10 px-4 border border-[#e2e8f0] bg-white text-[#3b82f6] font-medium text-sm rounded-md hover:bg-slate-50 transition-colors"
+                        >
                             Refresh all
                         </button>
                         <button className="h-10 px-4 bg-[#3b82f6] text-white font-medium text-sm rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm shadow-blue-200">
@@ -226,7 +234,13 @@ export default function Dashboard() {
                                         <td className="px-3 py-4 text-[#94a3b8] w-[55px]">—</td>
                                         <td className="px-5 py-4 text-right">
                                             <div className="flex items-center justify-end gap-4">
-                                                <span className="text-[#3b82f6] font-medium text-xs cursor-pointer hover:underline">Refresh now</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleRefreshInvites}
+                                                    className="text-[#3b82f6] font-medium text-xs cursor-pointer hover:underline"
+                                                >
+                                                    Refresh now
+                                                </button>
                                                 <button
                                                     onClick={() => handleInvite(emp)}
                                                     disabled={!!invitedEmployeeIds[emp.id]}
