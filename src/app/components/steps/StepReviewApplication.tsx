@@ -722,8 +722,14 @@ export default function StepReviewApplication() {
                                 <Input
                                     value={draft.name || ""}
                                     onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                                    className="enterprise-input"
+                                    className={`enterprise-input ${
+                                        draft.relation === "father" || draft.relation === "mother"
+                                            ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                                            : ""
+                                    }`}
                                     placeholder="Nominee name"
+                                    readOnly={draft.relation === "father" || draft.relation === "mother"}
+                                    disabled={draft.relation === "father" || draft.relation === "mother"}
                                 />
                                 <Input
                                     type="date"
