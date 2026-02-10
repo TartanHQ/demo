@@ -79,6 +79,7 @@ export const ALL_STEPS: Record<string, Step> = {
   journeySelection: { id: "journeySelection", title: "Select Journey" },
   ...addJourneySteps("ntb", [
     "welcome",
+    "ekycHandler",
     "profileDetails",
     "nomineeDetails",
     "incomeDetails",
@@ -124,6 +125,7 @@ export const STEP_COMPONENTS: Record<string, React.ComponentType> = {
   professionalDetailsExpress: StepProfessionalDetailsExpress,
 
   [makeJourneyStepId("ntb", "welcome")]: StepWelcome,
+  [makeJourneyStepId("ntb", "ekycHandler")]: StepEkycHandler,
   [makeJourneyStepId("ntb", "profileDetails")]: StepCombinedDetails,
   [makeJourneyStepId("ntb", "nomineeDetails")]: StepNomineeDetails,
   [makeJourneyStepId("ntb", "incomeDetails")]: StepIncomeDetails,
