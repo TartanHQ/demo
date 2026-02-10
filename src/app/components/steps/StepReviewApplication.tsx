@@ -18,6 +18,7 @@ type ReviewItem = {
     getDraft?: () => Record<string, any>;
     renderEdit?: (draft: Record<string, any>, setDraft: (next: Record<string, any>) => void) => React.ReactNode;
     onSave?: (draft: Record<string, any>) => void;
+    validate?: (draft: Record<string, any>) => string | null;
 };
 
 export default function StepReviewApplication() {
@@ -28,6 +29,7 @@ export default function StepReviewApplication() {
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [editState, setEditState] = useState<Record<string, boolean>>({});
     const [drafts, setDrafts] = useState<Record<string, Record<string, any>>>({});
+    const [draftErrors, setDraftErrors] = useState<Record<string, string>>({});
     const isNtb = journeyType === "ntb" || journeyType === "ntb-conversion";
     const hideBooleanChanges = journeyType === "etb";
 
@@ -132,9 +134,28 @@ export default function StepReviewApplication() {
             .join(", ");
     };
 
+    const isBlank = (value: any) => !String(value ?? "").trim();
+    const validateAddressFields = (draft: Record<string, any>) => {
+        if (
+            isBlank(draft.line1) ||
+            isBlank(draft.line2) ||
+            isBlank(draft.city) ||
+            isBlank(draft.state) ||
+            isBlank(draft.pincode)
+        ) {
+            return "Please complete all address fields except Line 3.";
+        }
+        return null;
+    };
+
     const startEdit = (id: string, initial: Record<string, any>) => {
         setEditState((prev) => ({ ...prev, [id]: true }));
         setDrafts((prev) => ({ ...prev, [id]: initial }));
+        setDraftErrors((prev) => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+        });
     };
 
     const cancelEdit = (id: string) => {
@@ -144,16 +165,31 @@ export default function StepReviewApplication() {
             delete next[id];
             return next;
         });
-    };
-
-    const saveEdit = (id: string, onSave?: (draft: Record<string, any>) => void) => {
-        if (!onSave) return;
-        const draft = drafts[id];
-        onSave(draft || {});
-        setEditState((prev) => ({ ...prev, [id]: false }));
-        setDrafts((prev) => {
+        setDraftErrors((prev) => {
             const next = { ...prev };
             delete next[id];
+            return next;
+        });
+    };
+
+    const saveEdit = (item: ReviewItem) => {
+        if (!item.onSave) return;
+        const draft = drafts[item.id] || {};
+        const error = item.validate ? item.validate(draft) : null;
+        if (error) {
+            setDraftErrors((prev) => ({ ...prev, [item.id]: error }));
+            return;
+        }
+        item.onSave(draft);
+        setEditState((prev) => ({ ...prev, [item.id]: false }));
+        setDrafts((prev) => {
+            const next = { ...prev };
+            delete next[item.id];
+            return next;
+        });
+        setDraftErrors((prev) => {
+            const next = { ...prev };
+            delete next[item.id];
             return next;
         });
     };
@@ -243,6 +279,12 @@ export default function StepReviewApplication() {
                         usesPrimaryEmailForComms: draft.usesPrimaryEmailForComms !== false,
                         communicationEmail: draft.usesPrimaryEmailForComms === false ? draft.communicationEmail || "" : "",
                     }),
+                validate: (draft) => {
+                    if (draft.usesPrimaryEmailForComms === false && isBlank(draft.communicationEmail)) {
+                        return "Please enter a communication email.";
+                    }
+                    return null;
+                },
             });
         }
         if (hasChanged("fatherName", formData.fatherName)) {
@@ -260,6 +302,7 @@ export default function StepReviewApplication() {
                     />
                 ),
                 onSave: (draft) => updateFormData({ fatherName: draft.fatherName || "" }),
+                validate: (draft) => (isBlank(draft.fatherName) ? "Please enter father's name." : null),
             });
         }
         if (hasChanged("motherName", formData.motherName)) {
@@ -277,6 +320,7 @@ export default function StepReviewApplication() {
                     />
                 ),
                 onSave: (draft) => updateFormData({ motherName: draft.motherName || "" }),
+                validate: (draft) => (isBlank(draft.motherName) ? "Please enter mother's name." : null),
             });
         }
 
@@ -310,6 +354,7 @@ export default function StepReviewApplication() {
                     </Select>
                 ),
                 onSave: (draft) => updateFormData({ maritalStatus: draft.maritalStatus || "" }),
+                validate: (draft) => (isBlank(draft.maritalStatus) ? "Please select marital status." : null),
             });
         }
 
@@ -341,6 +386,7 @@ export default function StepReviewApplication() {
                     </Select>
                 ),
                 onSave: (draft) => updateFormData({ incomeRange: draft.incomeRange || "" }),
+                validate: (draft) => (isBlank(draft.incomeRange) ? "Please select an income range." : null),
             });
         }
 
@@ -366,6 +412,7 @@ export default function StepReviewApplication() {
                     </Select>
                 ),
                 onSave: (draft) => updateFormData({ isPep: draft.isPep === "yes" }),
+                validate: (draft) => (isBlank(draft.isPep) ? "Please select a value." : null),
             });
         }
 
@@ -394,6 +441,7 @@ export default function StepReviewApplication() {
                     </Select>
                 ),
                 onSave: (draft) => updateFormData({ isIndianNational: draft.isIndianNational === "yes" }),
+                validate: (draft) => (isBlank(draft.isIndianNational) ? "Please select a value." : null),
             });
         }
 
@@ -422,6 +470,7 @@ export default function StepReviewApplication() {
                     </Select>
                 ),
                 onSave: (draft) => updateFormData({ isTaxResidentIndiaOnly: draft.isTaxResidentIndiaOnly === "yes" }),
+                validate: (draft) => (isBlank(draft.isTaxResidentIndiaOnly) ? "Please select a value." : null),
             });
         }
 
@@ -443,6 +492,7 @@ export default function StepReviewApplication() {
                     />
                 ),
                 onSave: (draft) => updateFormData({ currentAddress: draft.currentAddress || "" }),
+                validate: (draft) => (isBlank(draft.currentAddress) ? "Please enter permanent address." : null),
             });
         }
 
@@ -572,6 +622,7 @@ export default function StepReviewApplication() {
                         }),
                     });
                 },
+                validate: (draft) => validateAddressFields(draft),
             });
         }
 
@@ -848,6 +899,30 @@ export default function StepReviewApplication() {
                             nomineeAddressSource: primaryNominee?.addressSource || "custom",
                         });
                     },
+                    validate: (draft) => {
+                        if (isBlank(draft.addressSource) || draft.addressSource === "none") {
+                            return "Please choose a nominee address option.";
+                        }
+                        if (isBlank(draft.relation)) {
+                            return "Please select a relationship.";
+                        }
+                        if (isBlank(draft.name)) {
+                            return "Please enter nominee name.";
+                        }
+                        if (isBlank(draft.dob)) {
+                            return "Please enter nominee date of birth.";
+                        }
+                        if (draft.addressSource === "custom") {
+                            return validateAddressFields({
+                                line1: draft.addressLine1,
+                                line2: draft.addressLine2,
+                                city: draft.addressCity,
+                                state: draft.addressState,
+                                pincode: draft.addressPincode,
+                            });
+                        }
+                        return null;
+                    },
                 });
             });
         }
@@ -872,6 +947,7 @@ export default function StepReviewApplication() {
                     />
                 ),
                 onSave: (draft) => updateFormData({ name: draft.name || "" }),
+                validate: (draft) => (isBlank(draft.name) ? "Please enter full name." : null),
             },
             {
                 id: "mobileNumber",
@@ -887,6 +963,7 @@ export default function StepReviewApplication() {
                     />
                 ),
                 onSave: (draft) => updateFormData({ mobileNumber: draft.mobileNumber || "" }),
+                validate: (draft) => (isBlank(draft.mobileNumber) ? "Please enter mobile number." : null),
             },
             {
                 id: "email",
@@ -903,6 +980,7 @@ export default function StepReviewApplication() {
                     />
                 ),
                 onSave: (draft) => updateFormData({ email: draft.email || "" }),
+                validate: (draft) => (isBlank(draft.email) ? "Please enter email." : null),
             },
             {
                 id: "dob",
@@ -918,6 +996,7 @@ export default function StepReviewApplication() {
                     />
                 ),
                 onSave: (draft) => updateFormData({ dob: draft.dob || "" }),
+                validate: (draft) => (isBlank(draft.dob) ? "Please enter date of birth." : null),
             },
             {
                 id: "pan",
@@ -933,6 +1012,7 @@ export default function StepReviewApplication() {
                     />
                 ),
                 onSave: (draft) => updateFormData({ pan: draft.pan || "" }),
+                validate: (draft) => (isBlank(draft.pan) ? "Please enter PAN." : null),
             },
             {
                 id: "maritalStatus",
@@ -960,6 +1040,7 @@ export default function StepReviewApplication() {
                     </Select>
                 ),
                 onSave: (draft) => updateFormData({ maritalStatus: draft.maritalStatus || "" }),
+                validate: (draft) => (isBlank(draft.maritalStatus) ? "Please select marital status." : null),
             },
             {
                 id: "fatherName",
@@ -975,6 +1056,7 @@ export default function StepReviewApplication() {
                     />
                 ),
                 onSave: (draft) => updateFormData({ fatherName: draft.fatherName || "" }),
+                validate: (draft) => (isBlank(draft.fatherName) ? "Please enter father's name." : null),
             },
             {
                 id: "motherName",
@@ -990,6 +1072,7 @@ export default function StepReviewApplication() {
                     />
                 ),
                 onSave: (draft) => updateFormData({ motherName: draft.motherName || "" }),
+                validate: (draft) => (isBlank(draft.motherName) ? "Please enter mother's name." : null),
             },
         ];
 
@@ -1008,6 +1091,7 @@ export default function StepReviewApplication() {
                     />
                 ),
                 onSave: (draft) => updateFormData({ currentAddress: draft.currentAddress || "" }),
+                validate: (draft) => (isBlank(draft.currentAddress) ? "Please enter current address." : null),
             },
             {
                 id: "communicationAddress",
@@ -1091,6 +1175,7 @@ export default function StepReviewApplication() {
                             pincode: draft.pincode || "",
                         }),
                     }),
+                validate: (draft) => validateAddressFields(draft),
             },
         ];
 
@@ -1119,6 +1204,7 @@ export default function StepReviewApplication() {
                     </Select>
                 ),
                 onSave: (draft) => updateFormData({ incomeRange: draft.incomeRange || "" }),
+                validate: (draft) => (isBlank(draft.incomeRange) ? "Please select an income range." : null),
             },
             {
                 id: "kycMethod",
@@ -1141,6 +1227,7 @@ export default function StepReviewApplication() {
                     </Select>
                 ),
                 onSave: (draft) => updateFormData({ kycMethod: draft.kycMethod || "" }),
+                validate: (draft) => (isBlank(draft.kycMethod) ? "Please select a KYC method." : null),
             },
         ];
 
@@ -1264,6 +1351,18 @@ export default function StepReviewApplication() {
                                   pincode: draft.addressPincode || "",
                               }),
                           }),
+                      validate: (draft) => {
+                          if (isBlank(draft.relation)) return "Please select a relationship.";
+                          if (isBlank(draft.name)) return "Please enter nominee name.";
+                          if (isBlank(draft.dob)) return "Please enter nominee date of birth.";
+                          return validateAddressFields({
+                              line1: draft.addressLine1,
+                              line2: draft.addressLine2,
+                              city: draft.addressCity,
+                              state: draft.addressState,
+                              pincode: draft.addressPincode,
+                          });
+                      },
                   },
               ]
             : [];
@@ -1326,13 +1425,19 @@ export default function StepReviewApplication() {
                                                 <div className="mt-3 space-y-3">
                                                     {item.renderEdit(draft, (next) => setDrafts((prev) => ({ ...prev, [item.id]: next })))}
                                                     <div className="flex items-center gap-2">
-                                                        <Button type="button" className="btn-primary h-8 px-4 text-xs" onClick={() => saveEdit(item.id, item.onSave)}>
+                                                        <Button type="button" className="btn-primary h-8 px-4 text-xs" onClick={() => saveEdit(item)}>
                                                             Save
                                                         </Button>
                                                         <Button type="button" variant="outline" className="h-8 px-4 text-xs" onClick={() => cancelEdit(item.id)}>
                                                             Cancel
                                                         </Button>
                                                     </div>
+                                                    {draftErrors[item.id] && (
+                                                        <p className="error-text">
+                                                            <AlertCircle className="w-4 h-4" />
+                                                            {draftErrors[item.id]}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <p className="text-sm font-semibold text-gray-900 mt-1 whitespace-pre-wrap break-words">{item.value}</p>
@@ -1376,13 +1481,19 @@ export default function StepReviewApplication() {
                                             <div className="mt-3 space-y-3">
                                                 {item.renderEdit(draft, (next) => setDrafts((prev) => ({ ...prev, [item.id]: next })))}
                                                 <div className="flex items-center gap-2">
-                                                    <Button type="button" className="btn-primary h-8 px-4 text-xs" onClick={() => saveEdit(item.id, item.onSave)}>
+                                                    <Button type="button" className="btn-primary h-8 px-4 text-xs" onClick={() => saveEdit(item)}>
                                                         Save
                                                     </Button>
                                                     <Button type="button" variant="outline" className="h-8 px-4 text-xs" onClick={() => cancelEdit(item.id)}>
                                                         Cancel
                                                     </Button>
                                                 </div>
+                                                {draftErrors[item.id] && (
+                                                    <p className="error-text">
+                                                        <AlertCircle className="w-4 h-4" />
+                                                        {draftErrors[item.id]}
+                                                    </p>
+                                                )}
                                             </div>
                                         ) : (
                                             <p className="text-sm font-semibold text-gray-900 mt-1 whitespace-pre-wrap break-words">{item.value}</p>
