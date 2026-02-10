@@ -111,11 +111,8 @@ export default function Dashboard() {
 
             setInvitedEmployeeIds((prev) => ({ ...prev, [emp.id]: true }));
 
-            // Open the employee journey immediately; fallback to same-tab if blocked.
-            const opened = window.open(payload.journeyUrl, "_blank", "noopener,noreferrer");
-            if (!opened) {
-                window.location.href = payload.journeyUrl;
-            }
+            // Open the employee journey in a new tab only.
+            window.open(payload.journeyUrl, "_blank", "noopener,noreferrer");
         } catch (e) {
             // Keep UI unchanged on failure (button remains "Invite")
             void e;
