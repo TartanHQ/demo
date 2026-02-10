@@ -16,7 +16,7 @@ export default function StepWelcome() {
 
   const [mobileNumber, setMobileNumber] = useState(formData.mobileNumber || "");
   const [dob, setDob] = useState(formData.dob || "");
-  const [pan, setPan] = useState(formData.pan || "");
+  const [pan, setPan] = useState("");
   const [consent, setConsent] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -37,8 +37,7 @@ export default function StepWelcome() {
     trackEvent('page_viewed', { page: 'welcome' });
     if (formData.mobileNumber && !mobileNumber) setMobileNumber(formData.mobileNumber);
     if (formData.dob && !dob) setDob(formData.dob);
-    if (formData.pan && !pan) setPan(formData.pan);
-  }, [formData.mobileNumber, formData.dob, formData.pan]);
+  }, [formData.mobileNumber, formData.dob]);
 
   const validateForm = useCallback(() => {
     const errors: { mobile?: string; dob?: string; pan?: string; consent?: string } = {};
@@ -51,8 +50,10 @@ export default function StepWelcome() {
       errors.dob = "Please provide your date of birth";
     }
     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-    if (!pan || !panRegex.test(pan)) {
-      errors.pan = "Please enter a valid PAN number (e.g. ABCDE1234F)";
+    if (!pan) {
+      errors.pan = "Please enter your PAN number";
+    } else if (!panRegex.test(pan)) {
+      errors.pan = "Please enter a valid Indian PAN (e.g. ABCDE1234F)";
     }
     if (!consent) {
       errors.consent = "Please accept the terms to continue";
@@ -246,19 +247,21 @@ export default function StepWelcome() {
             maxLength={10}
             value={pan}
             onChange={(e) => {
-              setPan(e.target.value.toUpperCase());
+              const next = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+              setPan(next);
               if (validationErrors.pan) {
                 setValidationErrors(prev => ({ ...prev, pan: undefined }));
               }
             }}
-            className={`enterprise-input uppercase ${validationErrors.pan ? 'error' : ''} ${
-              journeyType === "etb" || journeyType === "etb-nk" || journeyType === "ntb" || journeyType === "ntb-conversion"
-                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-                : ""
-            }`}
+            className={`enterprise-input uppercase ${validationErrors.pan ? 'error' : ''}`}
             placeholder="ABCDE1234F"
-            disabled={otpSent || journeyType === "etb" || journeyType === "etb-nk" || journeyType === "ntb" || journeyType === "ntb-conversion"}
+            disabled={otpSent || journeyType === "etb" || journeyType === "etb-nk"}
           />
+          {(journeyType === "ntb" || journeyType === "ntb-conversion") && (
+            <p className="mt-2 text-xs font-bold text-red-600">
+              (This is only for Demo. Pan number field will be prefilled and disabled when available through HRIS)
+            </p>
+          )}
           {validationErrors.pan && (
             <p className="error-text">
               <AlertCircle className="w-4 h-4" />
