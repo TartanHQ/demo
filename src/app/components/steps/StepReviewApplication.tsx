@@ -134,6 +134,17 @@ export default function StepReviewApplication() {
             .join(", ");
     };
 
+    const formatNomineeAddressValue = (a: {
+        line1?: string;
+        line2?: string;
+        line3?: string;
+        city?: string;
+        state?: string;
+        pincode?: string;
+        country?: string;
+    }) =>
+        [a.line1, a.line2, a.line3, a.city, a.state, a.pincode, a.country].filter(Boolean).join(", ");
+
     const isBlank = (value: any) => !String(value ?? "").trim();
     const validateAddressFields = (draft: Record<string, any>) => {
         if (
@@ -145,6 +156,19 @@ export default function StepReviewApplication() {
         ) {
             return "Please complete all address fields except Line 3.";
         }
+        return null;
+    };
+
+    const validateNomineeAddressFields = (draft: Record<string, any>) => {
+        const err = validateAddressFields({
+            line1: draft.addressLine1,
+            line2: draft.addressLine2,
+            city: draft.addressCity,
+            state: draft.addressState,
+            pincode: draft.addressPincode,
+        });
+        if (err) return err;
+        if (isBlank(draft.addressCountry)) return "Please enter country.";
         return null;
     };
 
@@ -634,6 +658,7 @@ export default function StepReviewApplication() {
             city: "",
             state: "",
             pincode: "",
+            country: "India",
         };
         const communicationNomineeAddress = {
             line1: formData.communicationAddressLine1 || "",
@@ -642,6 +667,7 @@ export default function StepReviewApplication() {
             city: formData.communicationAddressCity || "",
             state: formData.communicationAddressState || "",
             pincode: formData.communicationAddressPincode || "",
+            country: "India",
         };
         const nomineesChanged = personalBaseline
             ? !areValuesEqual(formData.nominees || [], personalBaseline.nominees || []) ||
@@ -651,13 +677,14 @@ export default function StepReviewApplication() {
         if (nomineeEnabled && nomineesChanged) {
             const nominees = Array.isArray(formData.nominees) ? formData.nominees : [];
             nominees.forEach((nominee: any, index: number) => {
-                const addressValue = formatAddress({
+                const addressValue = formatNomineeAddressValue({
                     line1: nominee.addressLine1 || "",
                     line2: nominee.addressLine2 || "",
                     line3: nominee.addressLine3 || "",
                     city: nominee.addressCity || "",
                     state: nominee.addressState || "",
                     pincode: nominee.addressPincode || "",
+                    country: nominee.addressCountry || "",
                 });
                 items.push({
                     id: `nominee-${index}`,
@@ -674,6 +701,7 @@ export default function StepReviewApplication() {
                         addressCity: nominee.addressCity || "",
                         addressState: nominee.addressState || "",
                         addressPincode: nominee.addressPincode || "",
+                        addressCountry: nominee.addressCountry || "India",
                     }),
                     renderEdit: (draft, setDraft) => {
                         const resolvedAddress =
@@ -688,6 +716,7 @@ export default function StepReviewApplication() {
                                       city: draft.addressCity || "",
                                       state: draft.addressState || "",
                                       pincode: draft.addressPincode || "",
+                                      country: draft.addressCountry || "",
                                   };
                         const addressDisabled = draft.addressSource !== "custom";
                         return (
@@ -788,6 +817,12 @@ export default function StepReviewApplication() {
                                                             : option.value === "communication"
                                                             ? communicationNomineeAddress.pincode
                                                             : draft.addressPincode,
+                                                    addressCountry:
+                                                        option.value === "permanent"
+                                                            ? permanentNomineeAddress.country
+                                                            : option.value === "communication"
+                                                            ? communicationNomineeAddress.country
+                                                            : draft.addressCountry,
                                                 })
                                             }
                                             className={[
@@ -807,7 +842,7 @@ export default function StepReviewApplication() {
                                             value={resolvedAddress.line1 || ""}
                                             onChange={(e) => setDraft({ ...draft, addressLine1: e.target.value })}
                                             className="enterprise-input"
-                                            placeholder="Line 1"
+                                            placeholder="House/Flat, Building"
                                             disabled={addressDisabled}
                                         />
                                     </div>
@@ -816,7 +851,7 @@ export default function StepReviewApplication() {
                                             value={resolvedAddress.line2 || ""}
                                             onChange={(e) => setDraft({ ...draft, addressLine2: e.target.value })}
                                             className="enterprise-input"
-                                            placeholder="Line 2"
+                                            placeholder="Street, Locality"
                                             disabled={addressDisabled}
                                         />
                                     </div>
@@ -825,7 +860,16 @@ export default function StepReviewApplication() {
                                             value={resolvedAddress.line3 || ""}
                                             onChange={(e) => setDraft({ ...draft, addressLine3: e.target.value })}
                                             className="enterprise-input"
-                                            placeholder="Line 3"
+                                            placeholder="Area/Landmark"
+                                            disabled={addressDisabled}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Input
+                                            value={resolvedAddress.pincode || ""}
+                                            onChange={(e) => setDraft({ ...draft, addressPincode: e.target.value })}
+                                            className="enterprise-input"
+                                            placeholder="6-digit PIN"
                                             disabled={addressDisabled}
                                         />
                                     </div>
@@ -838,23 +882,25 @@ export default function StepReviewApplication() {
                                             disabled={addressDisabled}
                                         />
                                     </div>
-                                    <div>
-                                        <Input
-                                            value={resolvedAddress.state || ""}
-                                            onChange={(e) => setDraft({ ...draft, addressState: e.target.value })}
-                                            className="enterprise-input"
-                                            placeholder="State"
-                                            disabled={addressDisabled}
-                                        />
-                                    </div>
-                                    <div>
-                                        <Input
-                                            value={resolvedAddress.pincode || ""}
-                                            onChange={(e) => setDraft({ ...draft, addressPincode: e.target.value })}
-                                            className="enterprise-input"
-                                            placeholder="Pincode"
-                                            disabled={addressDisabled}
-                                        />
+                                    <div className="grid grid-cols-2 gap-3 md:col-span-2">
+                                        <div className="min-w-0">
+                                            <Input
+                                                value={resolvedAddress.state || ""}
+                                                onChange={(e) => setDraft({ ...draft, addressState: e.target.value })}
+                                                className="enterprise-input"
+                                                placeholder="State"
+                                                disabled={addressDisabled}
+                                            />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <Input
+                                                value={resolvedAddress.country || ""}
+                                                onChange={(e) => setDraft({ ...draft, addressCountry: e.target.value })}
+                                                className="enterprise-input"
+                                                placeholder="Country"
+                                                disabled={addressDisabled}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -873,6 +919,7 @@ export default function StepReviewApplication() {
                                       city: draft.addressCity || "",
                                       state: draft.addressState || "",
                                       pincode: draft.addressPincode || "",
+                                      country: draft.addressCountry || "",
                                   };
                         const updated = nominees.map((item: any, idx: number) => {
                             if (idx !== index) return item;
@@ -887,6 +934,7 @@ export default function StepReviewApplication() {
                                 addressCity: selectedAddress.city || "",
                                 addressState: selectedAddress.state || "",
                                 addressPincode: selectedAddress.pincode || "",
+                                addressCountry: selectedAddress.country || "",
                                 addressSource: draft.addressSource || "custom",
                             };
                         });
@@ -902,6 +950,16 @@ export default function StepReviewApplication() {
                             nomineeAddressCity: primaryNominee?.addressCity || "",
                             nomineeAddressState: primaryNominee?.addressState || "",
                             nomineeAddressPincode: primaryNominee?.addressPincode || "",
+                            nomineeAddressCountry: primaryNominee?.addressCountry || "",
+                            nomineeAddress: formatNomineeAddressValue({
+                                line1: primaryNominee?.addressLine1,
+                                line2: primaryNominee?.addressLine2,
+                                line3: primaryNominee?.addressLine3,
+                                city: primaryNominee?.addressCity,
+                                state: primaryNominee?.addressState,
+                                pincode: primaryNominee?.addressPincode,
+                                country: primaryNominee?.addressCountry,
+                            }),
                             nomineeAddressSource: primaryNominee?.addressSource || "custom",
                         });
                     },
@@ -919,13 +977,7 @@ export default function StepReviewApplication() {
                             return "Please enter nominee date of birth.";
                         }
                         if (draft.addressSource === "custom") {
-                            return validateAddressFields({
-                                line1: draft.addressLine1,
-                                line2: draft.addressLine2,
-                                city: draft.addressCity,
-                                state: draft.addressState,
-                                pincode: draft.addressPincode,
-                            });
+                            return validateNomineeAddressFields(draft);
                         }
                         return null;
                     },
@@ -1254,6 +1306,7 @@ export default function StepReviewApplication() {
                           addressCity: formData.nomineeAddressCity || "",
                           addressState: formData.nomineeAddressState || "",
                           addressPincode: formData.nomineeAddressPincode || "",
+                          addressCountry: formData.nomineeAddressCountry || "India",
                       }),
                       renderEdit: (draft, setDraft) => (
                           <div className="space-y-3">
@@ -1291,7 +1344,7 @@ export default function StepReviewApplication() {
                                           value={draft.addressLine1 || ""}
                                           onChange={(e) => setDraft({ ...draft, addressLine1: e.target.value })}
                                           className="enterprise-input"
-                                          placeholder="Line 1"
+                                          placeholder="House/Flat, Building"
                                       />
                                   </div>
                                   <div className="md:col-span-2">
@@ -1299,7 +1352,7 @@ export default function StepReviewApplication() {
                                           value={draft.addressLine2 || ""}
                                           onChange={(e) => setDraft({ ...draft, addressLine2: e.target.value })}
                                           className="enterprise-input"
-                                          placeholder="Line 2"
+                                          placeholder="Street, Locality"
                                       />
                                   </div>
                                   <div className="md:col-span-2">
@@ -1307,7 +1360,15 @@ export default function StepReviewApplication() {
                                           value={draft.addressLine3 || ""}
                                           onChange={(e) => setDraft({ ...draft, addressLine3: e.target.value })}
                                           className="enterprise-input"
-                                          placeholder="Line 3"
+                                          placeholder="Area/Landmark"
+                                      />
+                                  </div>
+                                  <div>
+                                      <Input
+                                          value={draft.addressPincode || ""}
+                                          onChange={(e) => setDraft({ ...draft, addressPincode: e.target.value })}
+                                          className="enterprise-input"
+                                          placeholder="6-digit PIN"
                                       />
                                   </div>
                                   <div>
@@ -1318,21 +1379,23 @@ export default function StepReviewApplication() {
                                           placeholder="City"
                                       />
                                   </div>
-                                  <div>
-                                      <Input
-                                          value={draft.addressState || ""}
-                                          onChange={(e) => setDraft({ ...draft, addressState: e.target.value })}
-                                          className="enterprise-input"
-                                          placeholder="State"
-                                      />
-                                  </div>
-                                  <div>
-                                      <Input
-                                          value={draft.addressPincode || ""}
-                                          onChange={(e) => setDraft({ ...draft, addressPincode: e.target.value })}
-                                          className="enterprise-input"
-                                          placeholder="Pincode"
-                                      />
+                                  <div className="grid grid-cols-2 gap-3 md:col-span-2">
+                                      <div className="min-w-0">
+                                          <Input
+                                              value={draft.addressState || ""}
+                                              onChange={(e) => setDraft({ ...draft, addressState: e.target.value })}
+                                              className="enterprise-input"
+                                              placeholder="State"
+                                          />
+                                      </div>
+                                      <div className="min-w-0">
+                                          <Input
+                                              value={draft.addressCountry || ""}
+                                              onChange={(e) => setDraft({ ...draft, addressCountry: e.target.value })}
+                                              className="enterprise-input"
+                                              placeholder="Country"
+                                          />
+                                      </div>
                                   </div>
                               </div>
                           </div>
@@ -1348,26 +1411,22 @@ export default function StepReviewApplication() {
                               nomineeAddressCity: draft.addressCity || "",
                               nomineeAddressState: draft.addressState || "",
                               nomineeAddressPincode: draft.addressPincode || "",
-                              nomineeAddress: formatAddress({
+                              nomineeAddressCountry: draft.addressCountry || "",
+                              nomineeAddress: formatNomineeAddressValue({
                                   line1: draft.addressLine1 || "",
                                   line2: draft.addressLine2 || "",
                                   line3: draft.addressLine3 || "",
                                   city: draft.addressCity || "",
                                   state: draft.addressState || "",
                                   pincode: draft.addressPincode || "",
+                                  country: draft.addressCountry || "",
                               }),
                           }),
                       validate: (draft) => {
                           if (isBlank(draft.relation)) return "Please select a relationship.";
                           if (isBlank(draft.name)) return "Please enter nominee name.";
                           if (isBlank(draft.dob)) return "Please enter nominee date of birth.";
-                          return validateAddressFields({
-                              line1: draft.addressLine1,
-                              line2: draft.addressLine2,
-                              city: draft.addressCity,
-                              state: draft.addressState,
-                              pincode: draft.addressPincode,
-                          });
+                          return validateNomineeAddressFields(draft);
                       },
                   },
               ]

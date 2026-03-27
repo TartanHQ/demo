@@ -31,8 +31,20 @@ type Nominee = {
   addressCity: string;
   addressState: string;
   addressPincode: string;
+  addressCountry: string;
   addressSource: NomineeAddressSource;
+  guardianFullName: string;
+  guardianDob: string;
+  guardianAddressLine1: string;
+  guardianAddressLine2: string;
+  guardianAddressLine3: string;
+  guardianAddressCity: string;
+  guardianAddressState: string;
+  guardianAddressPincode: string;
+  guardianAddressCountry: string;
 };
+
+const COUNTRY_OF_BIRTH_DEFAULT = "India";
 
 const createEmptyNominee = (): Nominee => ({
   name: "",
@@ -45,7 +57,17 @@ const createEmptyNominee = (): Nominee => ({
   addressCity: "",
   addressState: "",
   addressPincode: "",
+  addressCountry: COUNTRY_OF_BIRTH_DEFAULT,
   addressSource: "none",
+  guardianFullName: "",
+  guardianDob: "",
+  guardianAddressLine1: "",
+  guardianAddressLine2: "",
+  guardianAddressLine3: "",
+  guardianAddressCity: "",
+  guardianAddressState: "",
+  guardianAddressPincode: "",
+  guardianAddressCountry: COUNTRY_OF_BIRTH_DEFAULT,
 });
 
 const PINCODE_LOOKUP: Record<string, { city: string; state: string }> = {
@@ -66,6 +88,52 @@ const getCityStateForPincode = (pincode: string) => {
   return PINCODE_LOOKUP[normalized] || null;
 };
 
+const BIRTH_STATE_OPTIONS: string[] = [
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Delhi",
+  "Jammu & Kashmir",
+  "Ladakh",
+  "Chandigarh",
+  "Puducherry",
+  "Andaman & Nicobar Islands",
+  "Lakshadweep",
+  "Dadra & Nagar Haveli and Daman & Diu",
+];
+
+const RESIDENCE_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "owned", label: "Owned" },
+  { value: "rented", label: "Rented" },
+  { value: "company_provided", label: "Company Provided" },
+  { value: "other", label: "Other" },
+];
+
 const formatAddress = (address: AddressFields) => {
   return [
     address.line1,
@@ -79,6 +147,27 @@ const formatAddress = (address: AddressFields) => {
     .join(", ");
 };
 
+const formatNomineeAddressDisplay = (n: {
+  addressLine1: string;
+  addressLine2: string;
+  addressLine3: string;
+  addressCity: string;
+  addressState: string;
+  addressPincode: string;
+  addressCountry: string;
+}) =>
+  [
+    n.addressLine1,
+    n.addressLine2,
+    n.addressLine3,
+    n.addressCity,
+    n.addressState,
+    n.addressPincode,
+    n.addressCountry,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
 const mapAddressFieldsToNominee = (address: AddressFields) => ({
   addressLine1: address.line1,
   addressLine2: address.line2,
@@ -86,6 +175,7 @@ const mapAddressFieldsToNominee = (address: AddressFields) => ({
   addressCity: address.city,
   addressState: address.state,
   addressPincode: address.pincode,
+  addressCountry: COUNTRY_OF_BIRTH_DEFAULT,
 });
 
 export default function StepCombinedDetails() {
@@ -101,7 +191,12 @@ export default function StepCombinedDetails() {
   const [communicationEmail, setCommunicationEmail] = useState(formData.communicationEmail || "");
   const [fatherName, setFatherName] = useState(formData.fatherName || "");
   const [motherName, setMotherName] = useState(formData.motherName || "");
-  const [maritalStatus, setMaritalStatus] = useState("");
+  // Prefill marital status from journey state so conditional spouse fields appear correctly.
+  const [maritalStatus, setMaritalStatus] = useState(formData.maritalStatus || "");
+  const [spouseName, setSpouseName] = useState(formData.spouseName || "");
+  const [stateOfBirth, setStateOfBirth] = useState(formData.stateOfBirth || "");
+  const [cityOfBirth, setCityOfBirth] = useState(formData.cityOfBirth || "");
+  const [typeOfResidence, setTypeOfResidence] = useState(formData.typeOfResidence || "");
   const [incomeRange, setIncomeRange] = useState(formData.incomeRange || "");
   const [isPep, setIsPep] = useState<boolean>(!!formData.isPep);
   const [isIndianNational, setIsIndianNational] = useState<boolean>(formData.isIndianNational !== false);
@@ -139,6 +234,14 @@ export default function StepCombinedDetails() {
         ...createEmptyNominee(),
         ...nominee,
         nameLocked: !!nominee?.name,
+        addressCountry: nominee.addressCountry || COUNTRY_OF_BIRTH_DEFAULT,
+        guardianAddressLine1: nominee.guardianAddressLine1 || nominee.guardianAddress || "",
+        guardianAddressLine2: nominee.guardianAddressLine2 || "",
+        guardianAddressLine3: nominee.guardianAddressLine3 || "",
+        guardianAddressCity: nominee.guardianAddressCity || "",
+        guardianAddressState: nominee.guardianAddressState || "",
+        guardianAddressPincode: nominee.guardianAddressPincode || "",
+        guardianAddressCountry: nominee.guardianAddressCountry || COUNTRY_OF_BIRTH_DEFAULT,
         addressSource:
           nominee.addressSource ||
           (nominee.sameAsCommunicationAddress ? "communication" : "none"),
@@ -158,6 +261,7 @@ export default function StepCombinedDetails() {
           addressCity: formData.nomineeAddressCity || "",
           addressState: formData.nomineeAddressState || "",
           addressPincode: formData.nomineeAddressPincode || "",
+          addressCountry: formData.nomineeAddressCountry || COUNTRY_OF_BIRTH_DEFAULT,
           addressSource:
             formData.nomineeAddressSource || (formData.nomineeSameAsCommunicationAddress ? "communication" : "none"),
         },
@@ -252,14 +356,47 @@ export default function StepCombinedDetails() {
     !!nominee.addressLine2 &&
     !!nominee.addressCity &&
     !!nominee.addressState &&
-    !!nominee.addressPincode;
+    !!nominee.addressPincode &&
+    !!nominee.addressCountry?.trim();
+
+  const isGuardianAddressComplete = (nominee: Nominee) =>
+    !!nominee.guardianAddressLine1?.trim() &&
+    !!nominee.guardianAddressLine2?.trim() &&
+    !!nominee.guardianAddressCity?.trim() &&
+    !!nominee.guardianAddressState?.trim() &&
+    !!nominee.guardianAddressPincode?.trim() &&
+    !!nominee.guardianAddressCountry?.trim();
+
+  const getAgeInYears = (dob: string) => {
+    if (!dob) return null;
+    const d = new Date(dob);
+    if (Number.isNaN(d.getTime())) return null;
+    const now = new Date();
+    let age = now.getFullYear() - d.getFullYear();
+    const monthDiff = now.getMonth() - d.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < d.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const isMinorNominee = (dob: string) => {
+    const age = getAgeInYears(dob);
+    return age !== null && age < 18;
+  };
+
+  const isGuardianComplete = (nominee: Nominee) =>
+    !!nominee.guardianFullName?.trim() &&
+    !!nominee.guardianDob &&
+    isGuardianAddressComplete(nominee);
 
   const isNomineeComplete = (nominee: Nominee) =>
     nominee.addressSource !== "none" &&
     !!nominee.name &&
     !!nominee.relation &&
     !!nominee.dob &&
-    (nominee.addressSource !== "custom" || isNomineeAddressComplete(nominee));
+    (nominee.addressSource !== "custom" || isNomineeAddressComplete(nominee)) &&
+    (!isMinorNominee(nominee.dob) || isGuardianComplete(nominee));
 
   const displayEmail = useMemo(
     () => (usesPrimaryEmailForComms === false && communicationEmail ? communicationEmail : email),
@@ -273,6 +410,10 @@ export default function StepCombinedDetails() {
     fatherName &&
     motherName &&
     maritalStatus &&
+    (!isNtb || maritalStatus !== "married" || !!spouseName) &&
+    (!isNtb || !!stateOfBirth) &&
+    (!isNtb || !!cityOfBirth) &&
+    (!isNtb || !!typeOfResidence) &&
     incomeRange &&
     usesPrimaryEmailForComms !== null &&
     (usesPrimaryEmailForComms || !!communicationEmail) &&
@@ -299,6 +440,11 @@ export default function StepCombinedDetails() {
       fatherName,
       motherName,
       maritalStatus,
+      spouseName,
+      countryOfBirth: COUNTRY_OF_BIRTH_DEFAULT,
+      stateOfBirth,
+      cityOfBirth,
+      typeOfResidence,
       incomeRange,
       sameAsPermanentAddress,
       currentAddress: permanentAddressText,
@@ -323,6 +469,7 @@ export default function StepCombinedDetails() {
     isIndianNational,
     isPep,
     isTaxResidentIndiaOnly,
+    spouseName,
     maritalStatus,
     motherName,
     nominees,
@@ -330,6 +477,9 @@ export default function StepCombinedDetails() {
     permanentAddressForNominee,
     permanentAddressText,
     sameAsPermanentAddress,
+    stateOfBirth,
+    cityOfBirth,
+    typeOfResidence,
     usesPrimaryEmailForComms,
     wantsNominee,
   ]);
@@ -362,6 +512,11 @@ export default function StepCombinedDetails() {
       fatherName,
       motherName,
       maritalStatus,
+      spouseName,
+      countryOfBirth: COUNTRY_OF_BIRTH_DEFAULT,
+      stateOfBirth,
+      cityOfBirth,
+      typeOfResidence,
       incomeRange,
       communicationAddressLine1: resolvedCommunicationAddress.line1,
       communicationAddressLine2: resolvedCommunicationAddress.line2,
@@ -378,22 +533,14 @@ export default function StepCombinedDetails() {
       nomineeName: primaryNominee?.name || "",
       nomineeRelation: primaryNominee?.relation || "",
       nomineeDob: primaryNominee?.dob || "",
-      nomineeAddress: primaryNominee
-        ? formatAddress({
-            line1: primaryNominee.addressLine1,
-            line2: primaryNominee.addressLine2,
-            line3: primaryNominee.addressLine3,
-            city: primaryNominee.addressCity,
-            state: primaryNominee.addressState,
-            pincode: primaryNominee.addressPincode,
-          })
-        : "",
+      nomineeAddress: primaryNominee ? formatNomineeAddressDisplay(primaryNominee) : "",
       nomineeAddressLine1: primaryNominee?.addressLine1 || "",
       nomineeAddressLine2: primaryNominee?.addressLine2 || "",
       nomineeAddressLine3: primaryNominee?.addressLine3 || "",
       nomineeAddressCity: primaryNominee?.addressCity || "",
       nomineeAddressState: primaryNominee?.addressState || "",
       nomineeAddressPincode: primaryNominee?.addressPincode || "",
+      nomineeAddressCountry: primaryNominee?.addressCountry || "",
       nomineeSameAsCommunicationAddress: primaryNominee?.addressSource === "communication",
       nomineeAddressSource: primaryNominee?.addressSource || "custom",
       isPep,
@@ -426,6 +573,7 @@ export default function StepCombinedDetails() {
     isIndianNational,
     isPep,
     isTaxResidentIndiaOnly,
+    spouseName,
     maritalStatus,
     motherName,
     nextStep,
@@ -435,6 +583,9 @@ export default function StepCombinedDetails() {
     permanentAddressForNominee,
     permanentAddressText,
     sameAsPermanentAddress,
+    stateOfBirth,
+    cityOfBirth,
+    typeOfResidence,
     setNomineeEnabled,
     updateFormData,
     usesPrimaryEmailForComms,
@@ -598,6 +749,26 @@ export default function StepCombinedDetails() {
                 Please select your marital status.
               </p>
             )}
+            {isNtb && maritalStatus === "married" && (
+              <div className="mt-4">
+                <label className="form-label flex items-center gap-2">
+                  <User className="w-4 h-4 text-slate-400" />
+                  Spouse Name *
+                </label>
+                <Input
+                  value={spouseName}
+                  onChange={(e) => setSpouseName(e.target.value)}
+                  className={`enterprise-input ${showErrors && !spouseName ? "error" : ""}`}
+                  placeholder="Full name"
+                />
+                {showErrors && !spouseName && (
+                  <p className="error-text">
+                    <AlertCircle className="w-4 h-4" />
+                    Please enter spouse name.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
@@ -642,6 +813,96 @@ export default function StepCombinedDetails() {
             )}
           </div>
         </div>
+
+        {/* Birth & Residence (NTB Mandatory) */}
+        {isNtb && (
+          <div className="rounded-[var(--radius-lg)] border border-gray-200 bg-white p-4 md:p-5 space-y-5">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Birth & Residence Details</p>
+              <p className="text-xs text-gray-600 mt-1">Add the details required for account processing.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="form-label flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-slate-400" />
+                  Country of Birth
+                </label>
+                <Input value={COUNTRY_OF_BIRTH_DEFAULT} readOnly disabled className="enterprise-input bg-gray-100 text-gray-500 cursor-not-allowed" />
+              </div>
+
+              <div>
+                <label className="form-label flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-slate-400" />
+                  State of Birth *
+                </label>
+                <Select value={stateOfBirth} onValueChange={(val) => { setStateOfBirth(val); setCityOfBirth(""); }}>
+                  <SelectTrigger className={`enterprise-input flex items-center justify-between ${showErrors && !stateOfBirth ? "error" : ""}`}>
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                    {BIRTH_STATE_OPTIONS.map((s) => (
+                      <SelectItem key={s} value={s} className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {showErrors && !stateOfBirth && (
+                  <p className="error-text">
+                    <AlertCircle className="w-4 h-4" />
+                    Please select state of birth.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="form-label flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-slate-400" />
+                  City of Birth *
+                </label>
+                <Input
+                  value={cityOfBirth}
+                  onChange={(e) => setCityOfBirth(e.target.value)}
+                  disabled={!stateOfBirth}
+                  className={`enterprise-input ${showErrors && !cityOfBirth ? "error" : ""} ${!stateOfBirth ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""}`}
+                  placeholder={stateOfBirth ? "Enter city of birth" : "Select state first"}
+                />
+                {showErrors && !cityOfBirth && (
+                  <p className="error-text">
+                    <AlertCircle className="w-4 h-4" />
+                    Please enter city of birth.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="form-label flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-slate-400" />
+                  Type of Residence *
+                </label>
+                <Select value={typeOfResidence} onValueChange={(val) => setTypeOfResidence(val)}>
+                  <SelectTrigger className={`enterprise-input flex items-center justify-between ${showErrors && !typeOfResidence ? "error" : ""}`}>
+                    <SelectValue placeholder="Select residence type" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                    {RESIDENCE_TYPE_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value} className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {showErrors && !typeOfResidence && (
+                  <p className="error-text">
+                    <AlertCircle className="w-4 h-4" />
+                    Please select type of residence.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Address */}
         <div className="rounded-[var(--radius-lg)] border border-gray-200 bg-white p-4 md:p-5 space-y-5">
@@ -932,6 +1193,7 @@ export default function StepCombinedDetails() {
             {nominees.map((nominee, index) => {
               const nomineeErrors = showErrors && !isNomineeComplete(nominee);
               const addressDisabled = nominee.addressSource !== "custom";
+              const nomineeIsMinor = isMinorNominee(nominee.dob);
 
               return (
                 <div key={`nominee-${index}`} className="rounded-[var(--radius-lg)] border border-gray-200 bg-white p-4 md:p-5 space-y-4">
@@ -1030,6 +1292,186 @@ export default function StepCombinedDetails() {
                     />
                     </div>
                   </div>
+
+                  {nomineeIsMinor && (
+                    <div className="rounded-[var(--radius-lg)] border border-rose-100 bg-rose-50/50 p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900">Guardian Details *</p>
+                          <p className="text-xs text-gray-600 mt-1">Nominee is under 18. Capture guardian details.</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="form-label">Guardian Full Name *</label>
+                          <Input
+                            value={nominee.guardianFullName}
+                            onChange={(e) =>
+                              setNominees((prev) =>
+                                prev.map((item, idx) => (idx === index ? { ...item, guardianFullName: e.target.value } : item))
+                              )
+                            }
+                            className={`enterprise-input ${showErrors && !nominee.guardianFullName ? "error" : ""}`}
+                            placeholder="Full name"
+                          />
+                          {showErrors && !nominee.guardianFullName && (
+                            <p className="error-text">
+                              <AlertCircle className="w-4 h-4" />
+                              Please enter guardian full name.
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="form-label">Guardian DOB *</label>
+                          <Input
+                            type="date"
+                            value={nominee.guardianDob}
+                            onChange={(e) =>
+                              setNominees((prev) =>
+                                prev.map((item, idx) => (idx === index ? { ...item, guardianDob: e.target.value } : item))
+                              )
+                            }
+                            className={`enterprise-input ${showErrors && !nominee.guardianDob ? "error" : ""}`}
+                          />
+                          {showErrors && !nominee.guardianDob && (
+                            <p className="error-text">
+                              <AlertCircle className="w-4 h-4" />
+                              Please enter guardian date of birth.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-gray-800">Guardian Address *</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="md:col-span-2">
+                            <label className="form-label">Line 1 *</label>
+                            <Input
+                              value={nominee.guardianAddressLine1}
+                              onChange={(e) =>
+                                setNominees((prev) =>
+                                  prev.map((item, idx) =>
+                                    idx === index ? { ...item, guardianAddressLine1: e.target.value } : item
+                                  )
+                                )
+                              }
+                              className={`enterprise-input ${showErrors && !nominee.guardianAddressLine1?.trim() ? "error" : ""}`}
+                              placeholder="House/Flat, Building"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="form-label">Line 2 *</label>
+                            <Input
+                              value={nominee.guardianAddressLine2}
+                              onChange={(e) =>
+                                setNominees((prev) =>
+                                  prev.map((item, idx) =>
+                                    idx === index ? { ...item, guardianAddressLine2: e.target.value } : item
+                                  )
+                                )
+                              }
+                              className={`enterprise-input ${showErrors && !nominee.guardianAddressLine2?.trim() ? "error" : ""}`}
+                              placeholder="Street, Locality"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="form-label">Line 3</label>
+                            <Input
+                              value={nominee.guardianAddressLine3}
+                              onChange={(e) =>
+                                setNominees((prev) =>
+                                  prev.map((item, idx) =>
+                                    idx === index ? { ...item, guardianAddressLine3: e.target.value } : item
+                                  )
+                                )
+                              }
+                              className="enterprise-input"
+                              placeholder="Area/Landmark"
+                            />
+                          </div>
+                          <div>
+                            <label className="form-label">Pincode *</label>
+                            <Input
+                              value={nominee.guardianAddressPincode}
+                              onChange={(e) =>
+                                setNominees((prev) =>
+                                  prev.map((item, idx) => {
+                                    if (idx !== index) return item;
+                                    const nextPincode = e.target.value;
+                                    const lookup = getCityStateForPincode(nextPincode);
+                                    return {
+                                      ...item,
+                                      guardianAddressPincode: nextPincode,
+                                      guardianAddressCity: lookup?.city || item.guardianAddressCity,
+                                      guardianAddressState: lookup?.state || item.guardianAddressState,
+                                    };
+                                  })
+                                )
+                              }
+                              className={`enterprise-input ${showErrors && !nominee.guardianAddressPincode?.trim() ? "error" : ""}`}
+                              placeholder="6-digit PIN"
+                            />
+                          </div>
+                          <div>
+                            <label className="form-label">City *</label>
+                            <Input
+                              value={nominee.guardianAddressCity}
+                              onChange={(e) =>
+                                setNominees((prev) =>
+                                  prev.map((item, idx) =>
+                                    idx === index ? { ...item, guardianAddressCity: e.target.value } : item
+                                  )
+                                )
+                              }
+                              className={`enterprise-input ${showErrors && !nominee.guardianAddressCity?.trim() ? "error" : ""}`}
+                              placeholder="City"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 md:col-span-2">
+                            <div className="min-w-0">
+                              <label className="form-label">State *</label>
+                              <Input
+                                value={nominee.guardianAddressState}
+                                onChange={(e) =>
+                                  setNominees((prev) =>
+                                    prev.map((item, idx) =>
+                                      idx === index ? { ...item, guardianAddressState: e.target.value } : item
+                                    )
+                                  )
+                                }
+                                className={`enterprise-input ${showErrors && !nominee.guardianAddressState?.trim() ? "error" : ""}`}
+                                placeholder="State"
+                              />
+                            </div>
+                            <div className="min-w-0">
+                              <label className="form-label">Country *</label>
+                              <Input
+                                value={nominee.guardianAddressCountry}
+                                onChange={(e) =>
+                                  setNominees((prev) =>
+                                    prev.map((item, idx) =>
+                                      idx === index ? { ...item, guardianAddressCountry: e.target.value } : item
+                                    )
+                                  )
+                                }
+                                className={`enterprise-input ${showErrors && !nominee.guardianAddressCountry?.trim() ? "error" : ""}`}
+                                placeholder="Country"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        {showErrors && !isGuardianAddressComplete(nominee) && (
+                          <p className="error-text">
+                            <AlertCircle className="w-4 h-4" />
+                            Please complete all required guardian address fields.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <p className="text-xs font-semibold text-gray-800">Nominee Address</p>
@@ -1153,19 +1595,35 @@ export default function StepCombinedDetails() {
                         disabled={addressDisabled}
                       />
                     </div>
-                    <div>
-                      <label className="form-label">State *</label>
-                      <Input
-                        value={nominee.addressState}
-                        onChange={(e) =>
-                          setNominees((prev) =>
-                            prev.map((item, idx) => (idx === index ? { ...item, addressState: e.target.value } : item))
-                          )
-                        }
-                        className={`enterprise-input ${showErrors && !nominee.addressState ? "error" : ""}`}
-                        placeholder="State"
-                        disabled={addressDisabled}
-                      />
+                    <div className="grid grid-cols-2 gap-4 md:col-span-2">
+                      <div className="min-w-0">
+                        <label className="form-label">State *</label>
+                        <Input
+                          value={nominee.addressState}
+                          onChange={(e) =>
+                            setNominees((prev) =>
+                              prev.map((item, idx) => (idx === index ? { ...item, addressState: e.target.value } : item))
+                            )
+                          }
+                          className={`enterprise-input ${showErrors && !nominee.addressState ? "error" : ""}`}
+                          placeholder="State"
+                          disabled={addressDisabled}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <label className="form-label">Country *</label>
+                        <Input
+                          value={nominee.addressCountry}
+                          onChange={(e) =>
+                            setNominees((prev) =>
+                              prev.map((item, idx) => (idx === index ? { ...item, addressCountry: e.target.value } : item))
+                            )
+                          }
+                          className={`enterprise-input ${showErrors && !nominee.addressCountry?.trim() ? "error" : ""}`}
+                          placeholder="Country"
+                          disabled={addressDisabled}
+                        />
+                      </div>
                     </div>
                   </div>
 
