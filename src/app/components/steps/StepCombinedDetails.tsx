@@ -31,7 +31,6 @@ type Nominee = {
   addressCity: string;
   addressState: string;
   addressPincode: string;
-  addressCountry: string;
   addressSource: NomineeAddressSource;
   guardianFullName: string;
   guardianDob: string;
@@ -41,7 +40,6 @@ type Nominee = {
   guardianAddressCity: string;
   guardianAddressState: string;
   guardianAddressPincode: string;
-  guardianAddressCountry: string;
 };
 
 const COUNTRY_OF_BIRTH_DEFAULT = "India";
@@ -57,7 +55,6 @@ const createEmptyNominee = (): Nominee => ({
   addressCity: "",
   addressState: "",
   addressPincode: "",
-  addressCountry: COUNTRY_OF_BIRTH_DEFAULT,
   addressSource: "none",
   guardianFullName: "",
   guardianDob: "",
@@ -67,7 +64,6 @@ const createEmptyNominee = (): Nominee => ({
   guardianAddressCity: "",
   guardianAddressState: "",
   guardianAddressPincode: "",
-  guardianAddressCountry: COUNTRY_OF_BIRTH_DEFAULT,
 });
 
 const PINCODE_LOOKUP: Record<string, { city: string; state: string }> = {
@@ -130,8 +126,8 @@ const BIRTH_STATE_OPTIONS: string[] = [
 const RESIDENCE_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "owned", label: "Owned" },
   { value: "rented", label: "Rented" },
+  { value: "ancestral_family", label: "Ancestral/Family" },
   { value: "company_provided", label: "Company Provided" },
-  { value: "other", label: "Other" },
 ];
 
 const formatAddress = (address: AddressFields) => {
@@ -154,17 +150,8 @@ const formatNomineeAddressDisplay = (n: {
   addressCity: string;
   addressState: string;
   addressPincode: string;
-  addressCountry: string;
 }) =>
-  [
-    n.addressLine1,
-    n.addressLine2,
-    n.addressLine3,
-    n.addressCity,
-    n.addressState,
-    n.addressPincode,
-    n.addressCountry,
-  ]
+  [n.addressLine1, n.addressLine2, n.addressLine3, n.addressCity, n.addressState, n.addressPincode]
     .filter(Boolean)
     .join(", ");
 
@@ -175,7 +162,6 @@ const mapAddressFieldsToNominee = (address: AddressFields) => ({
   addressCity: address.city,
   addressState: address.state,
   addressPincode: address.pincode,
-  addressCountry: COUNTRY_OF_BIRTH_DEFAULT,
 });
 
 export default function StepCombinedDetails() {
@@ -234,14 +220,12 @@ export default function StepCombinedDetails() {
         ...createEmptyNominee(),
         ...nominee,
         nameLocked: !!nominee?.name,
-        addressCountry: nominee.addressCountry || COUNTRY_OF_BIRTH_DEFAULT,
         guardianAddressLine1: nominee.guardianAddressLine1 || nominee.guardianAddress || "",
         guardianAddressLine2: nominee.guardianAddressLine2 || "",
         guardianAddressLine3: nominee.guardianAddressLine3 || "",
         guardianAddressCity: nominee.guardianAddressCity || "",
         guardianAddressState: nominee.guardianAddressState || "",
         guardianAddressPincode: nominee.guardianAddressPincode || "",
-        guardianAddressCountry: nominee.guardianAddressCountry || COUNTRY_OF_BIRTH_DEFAULT,
         addressSource:
           nominee.addressSource ||
           (nominee.sameAsCommunicationAddress ? "communication" : "none"),
@@ -261,7 +245,6 @@ export default function StepCombinedDetails() {
           addressCity: formData.nomineeAddressCity || "",
           addressState: formData.nomineeAddressState || "",
           addressPincode: formData.nomineeAddressPincode || "",
-          addressCountry: formData.nomineeAddressCountry || COUNTRY_OF_BIRTH_DEFAULT,
           addressSource:
             formData.nomineeAddressSource || (formData.nomineeSameAsCommunicationAddress ? "communication" : "none"),
         },
@@ -356,16 +339,14 @@ export default function StepCombinedDetails() {
     !!nominee.addressLine2 &&
     !!nominee.addressCity &&
     !!nominee.addressState &&
-    !!nominee.addressPincode &&
-    !!nominee.addressCountry?.trim();
+    !!nominee.addressPincode;
 
   const isGuardianAddressComplete = (nominee: Nominee) =>
     !!nominee.guardianAddressLine1?.trim() &&
     !!nominee.guardianAddressLine2?.trim() &&
     !!nominee.guardianAddressCity?.trim() &&
     !!nominee.guardianAddressState?.trim() &&
-    !!nominee.guardianAddressPincode?.trim() &&
-    !!nominee.guardianAddressCountry?.trim();
+    !!nominee.guardianAddressPincode?.trim();
 
   const getAgeInYears = (dob: string) => {
     if (!dob) return null;
@@ -540,7 +521,6 @@ export default function StepCombinedDetails() {
       nomineeAddressCity: primaryNominee?.addressCity || "",
       nomineeAddressState: primaryNominee?.addressState || "",
       nomineeAddressPincode: primaryNominee?.addressPincode || "",
-      nomineeAddressCountry: primaryNominee?.addressCountry || "",
       nomineeSameAsCommunicationAddress: primaryNominee?.addressSource === "communication",
       nomineeAddressSource: primaryNominee?.addressSource || "custom",
       isPep,
@@ -1430,37 +1410,20 @@ export default function StepCombinedDetails() {
                               placeholder="City"
                             />
                           </div>
-                          <div className="grid grid-cols-2 gap-4 md:col-span-2">
-                            <div className="min-w-0">
-                              <label className="form-label">State *</label>
-                              <Input
-                                value={nominee.guardianAddressState}
-                                onChange={(e) =>
-                                  setNominees((prev) =>
-                                    prev.map((item, idx) =>
-                                      idx === index ? { ...item, guardianAddressState: e.target.value } : item
-                                    )
+                          <div>
+                            <label className="form-label">State *</label>
+                            <Input
+                              value={nominee.guardianAddressState}
+                              onChange={(e) =>
+                                setNominees((prev) =>
+                                  prev.map((item, idx) =>
+                                    idx === index ? { ...item, guardianAddressState: e.target.value } : item
                                   )
-                                }
-                                className={`enterprise-input ${showErrors && !nominee.guardianAddressState?.trim() ? "error" : ""}`}
-                                placeholder="State"
-                              />
-                            </div>
-                            <div className="min-w-0">
-                              <label className="form-label">Country *</label>
-                              <Input
-                                value={nominee.guardianAddressCountry}
-                                onChange={(e) =>
-                                  setNominees((prev) =>
-                                    prev.map((item, idx) =>
-                                      idx === index ? { ...item, guardianAddressCountry: e.target.value } : item
-                                    )
-                                  )
-                                }
-                                className={`enterprise-input ${showErrors && !nominee.guardianAddressCountry?.trim() ? "error" : ""}`}
-                                placeholder="Country"
-                              />
-                            </div>
+                                )
+                              }
+                              className={`enterprise-input ${showErrors && !nominee.guardianAddressState?.trim() ? "error" : ""}`}
+                              placeholder="State"
+                            />
                           </div>
                         </div>
                         {showErrors && !isGuardianAddressComplete(nominee) && (
@@ -1595,35 +1558,19 @@ export default function StepCombinedDetails() {
                         disabled={addressDisabled}
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4 md:col-span-2">
-                      <div className="min-w-0">
-                        <label className="form-label">State *</label>
-                        <Input
-                          value={nominee.addressState}
-                          onChange={(e) =>
-                            setNominees((prev) =>
-                              prev.map((item, idx) => (idx === index ? { ...item, addressState: e.target.value } : item))
-                            )
-                          }
-                          className={`enterprise-input ${showErrors && !nominee.addressState ? "error" : ""}`}
-                          placeholder="State"
-                          disabled={addressDisabled}
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <label className="form-label">Country *</label>
-                        <Input
-                          value={nominee.addressCountry}
-                          onChange={(e) =>
-                            setNominees((prev) =>
-                              prev.map((item, idx) => (idx === index ? { ...item, addressCountry: e.target.value } : item))
-                            )
-                          }
-                          className={`enterprise-input ${showErrors && !nominee.addressCountry?.trim() ? "error" : ""}`}
-                          placeholder="Country"
-                          disabled={addressDisabled}
-                        />
-                      </div>
+                    <div>
+                      <label className="form-label">State *</label>
+                      <Input
+                        value={nominee.addressState}
+                        onChange={(e) =>
+                          setNominees((prev) =>
+                            prev.map((item, idx) => (idx === index ? { ...item, addressState: e.target.value } : item))
+                          )
+                        }
+                        className={`enterprise-input ${showErrors && !nominee.addressState ? "error" : ""}`}
+                        placeholder="State"
+                        disabled={addressDisabled}
+                      />
                     </div>
                   </div>
 
