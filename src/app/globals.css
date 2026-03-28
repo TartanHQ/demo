@@ -57,11 +57,12 @@
     /* Journey layout metrics */
     --journey-header-h: 56px;
     --journey-stepper-h: 52px;
-    --journey-bottom-bar-h: 72px;
+    --journey-bottom-bar-h: clamp(68px, 12vw, 72px);
   }
   @media (min-width: 768px) {
     :root {
       --journey-header-h: 56px;
+      --journey-bottom-bar-h: 72px;
     }
   }
 
@@ -79,7 +80,7 @@
     padding: 0;
     background-color: var(--gray-50);
     color: var(--gray-900);
-    font-size: 16px;
+    font-size: clamp(14px, 0.35vw + 13.1px, 16px);
     line-height: 1.5;
   }
 
@@ -106,19 +107,19 @@
   }
 
   h1 {
-    font-size: 28px;
+    font-size: clamp(1.375rem, 1.5vw + 1rem, 1.75rem);
   }
 
   h2 {
-    font-size: 24px;
+    font-size: clamp(1.25rem, 1.2vw + 0.9rem, 1.5rem);
   }
 
   h3 {
-    font-size: 20px;
+    font-size: clamp(1.125rem, 0.9vw + 0.85rem, 1.25rem);
   }
 
   h4 {
-    font-size: 18px;
+    font-size: clamp(1rem, 0.6vw + 0.8rem, 1.125rem);
   }
 
   p {
@@ -142,7 +143,7 @@
       0 2px 4px -1px rgba(0, 0, 0, 0.03),
       0 0 0 1px rgba(0, 0, 0, 0.02);
     /* Crisp outline */
-    padding: 40px;
+    padding: clamp(1.125rem, 3.5vw + 0.5rem, 2.5rem);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     /* overflow: hidden removed to allowing floating elements and inner shadows */
@@ -158,59 +159,34 @@
     /* Subtle HDFC Blue hint */
   }
 
-  @media (max-width: 640px) {
-    .enterprise-card {
-      padding: 24px;
-      border-radius: var(--radius-lg);
-    }
-  }
-
   /* Form Input - Enhanced for better UX */
   .enterprise-input {
     width: 100%;
-    padding: 12px 14px;
-    font-size: 14px;
+    padding: clamp(10px, 0.65vw + 8px, 12px) clamp(11px, 0.9vw + 9px, 14px);
+    font-size: clamp(0.8125rem, 0.35vw + 0.72rem, 0.875rem);
     border: 1px solid rgba(226, 232, 240, 0.95);
     border-radius: var(--radius);
     background: var(--white);
     color: var(--gray-900);
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-    line-height: 1.4;
+    line-height: 1.45;
     font-weight: 500;
-    min-height: 48px;
+    min-height: clamp(44px, 2vw + 38px, 48px);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
   }
 
-  /* Mobile compact mode: smaller text + controls to reduce scroll */
+  /* Narrow viewports: slightly tighter page chrome (fluid rules above handle type scale) */
   @media (max-width: 640px) {
-    .page-title {
-      font-size: 22px;
-      margin-bottom: 6px;
+    .page-header {
+      margin-bottom: clamp(0.875rem, 2vw, 1.25rem);
     }
 
-    .page-subtitle {
-      font-size: 13px;
-      line-height: 1.4;
+    .page-title {
+      margin-bottom: clamp(0.25rem, 1vw, 0.5rem);
     }
 
     .form-label {
-      font-size: 13px;
       margin-bottom: 6px;
-    }
-
-    .helper-text,
-    .error-text {
-      font-size: 12px;
-    }
-
-    .enterprise-input {
-      padding: 10px 12px;
-      font-size: 13px;
-      min-height: 44px;
-    }
-
-    .btn-primary {
-      font-size: 14px;
     }
   }
 
@@ -276,8 +252,8 @@
   .btn-primary {
     background: "#004C8F";
     color: "#000000";
-    padding: 14px 28px;
-    font-size: 16px;
+    padding: clamp(10px, 0.8vw + 7px, 14px) clamp(18px, 3vw + 12px, 28px);
+    font-size: clamp(0.875rem, 0.35vw + 0.8rem, 1rem);
     font-weight: 600;
     border: none;
     border-radius: var(--radius);
@@ -288,8 +264,8 @@
     justify-content: center;
     gap: 8px;
     line-height: 1;
-    height: 48px;
-    min-height: 48px;
+    min-height: clamp(44px, 2vw + 38px, 48px);
+    height: auto;
   }
 
   .btn-primary:hover:not(:disabled) {
@@ -311,14 +287,14 @@
   .btn-secondary {
     background: var(--white);
     color: var(--hdfc-blue);
-    padding: 14px 28px;
-    font-size: 16px;
+    padding: clamp(10px, 0.8vw + 7px, 14px) clamp(18px, 3vw + 12px, 28px);
+    font-size: clamp(0.875rem, 0.35vw + 0.8rem, 1rem);
     font-weight: 600;
     border: 1.5px solid var(--gray-300);
     border-radius: var(--radius);
     cursor: pointer;
     transition: transform 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
-    min-height: 48px;
+    min-height: clamp(44px, 2vw + 38px, 48px);
   }
 
   .btn-secondary:hover:not(:disabled) {
@@ -344,7 +320,7 @@
     cursor: pointer;
     padding: 0;
     text-decoration: none;
-    font-size: 14px;
+    font-size: clamp(0.75rem, 0.25vw + 0.72rem, 0.875rem);
     transition: color 0.2s ease;
   }
 
@@ -356,30 +332,30 @@
   /* Label - Improved consistency */
   .form-label {
     display: block;
-    font-size: 13px;
+    font-size: clamp(0.78125rem, 0.35vw + 0.71rem, 0.8125rem);
     font-weight: 600;
     color: var(--gray-700);
-    margin-bottom: 8px;
-    line-height: 1.4;
+    margin-bottom: clamp(6px, 0.5vw, 8px);
+    line-height: 1.35;
   }
 
   /* Helper Text */
   .helper-text {
-    font-size: 12px;
+    font-size: clamp(0.6875rem, 0.3vw + 0.62rem, 0.75rem);
     color: var(--gray-500);
     margin-top: 6px;
-    line-height: 1.4;
+    line-height: 1.45;
   }
 
   /* Error Text */
   .error-text {
-    font-size: 12px;
+    font-size: clamp(0.6875rem, 0.3vw + 0.62rem, 0.75rem);
     color: var(--error);
     margin-top: 6px;
     display: flex;
     align-items: center;
     gap: 6px;
-    line-height: 1.4;
+    line-height: 1.45;
   }
 
   /* Progress Indicator - Enhanced visibility */
@@ -387,7 +363,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
+    font-size: clamp(0.6875rem, 0.25vw + 0.62rem, 0.75rem);
     color: var(--gray-500);
     font-weight: 600;
     text-transform: uppercase;
@@ -399,28 +375,28 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 12px;
+    font-size: clamp(0.6875rem, 0.25vw + 0.62rem, 0.75rem);
     color: var(--gray-500);
     line-height: 1.4;
   }
 
   /* Page Header - For consistent page titles */
   .page-header {
-    margin-bottom: 24px;
+    margin-bottom: clamp(1rem, 2.2vw + 0.5rem, 1.5rem);
   }
 
   .page-title {
-    font-size: 26px;
+    font-size: clamp(1.375rem, 1.85vw + 0.82rem, 1.625rem);
     font-weight: 600;
     color: var(--gray-900);
-    margin-bottom: 8px;
+    margin-bottom: clamp(0.375rem, 1vw, 0.5rem);
     line-height: 1.2;
   }
 
   .page-subtitle {
-    font-size: 14px;
+    font-size: clamp(0.8125rem, 0.28vw + 0.74rem, 0.875rem);
     color: var(--gray-600);
-    line-height: 1.5;
+    line-height: 1.45;
   }
 
   /* Success Icon Container */

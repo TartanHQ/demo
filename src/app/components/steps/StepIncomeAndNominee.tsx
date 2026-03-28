@@ -5,7 +5,7 @@ import { useJourney } from "@/app/context/JourneyContext";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, DollarSign, Loader2, Plus, Trash2, UserPlus } from "lucide-react";
+import { AlertCircle, Loader2, Plus, Trash2, UserPlus } from "lucide-react";
 import StepCard from "@/app/components/layout/StepCard";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -88,24 +88,12 @@ export default function StepIncomeAndNominee() {
 
   const presentAddressIsAadhaarStyle = isNtb && sameAsPermanentAddress;
 
-  const [incomeRange, setIncomeRange] = useState(formData.incomeRange || "");
   const [wantsNominee, setWantsNominee] = useState<boolean | null>(
     formData.wantsNominee === undefined ? null : !!formData.wantsNominee
   );
   const [nominees, setNominees] = useState<Nominee[]>(() => buildInitialNomineesFromFormData(formData));
   const [showErrors, setShowErrors] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  const incomeRanges = useMemo(
-    () => [
-      { value: "0-5L", label: "Up to ₹5L" },
-      { value: "5-10L", label: "₹5L – ₹10L" },
-      { value: "10-15L", label: "₹10L – ₹15L" },
-      { value: "15-25L", label: "₹15L – ₹25L" },
-      { value: "25L+", label: "₹25L+" },
-    ],
-    []
-  );
 
   useEffect(() => {
     if (!wantsNominee) return;
@@ -176,9 +164,7 @@ export default function StepIncomeAndNominee() {
     (!isMinorNominee(nominee.dob) || isGuardianComplete(nominee));
 
   const isFormValid =
-    !!incomeRange &&
-    wantsNominee !== null &&
-    (!wantsNominee || (nominees.length > 0 && nominees.every(isNomineeComplete)));
+    wantsNominee !== null && (!wantsNominee || (nominees.length > 0 && nominees.every(isNomineeComplete)));
 
   const handleContinue = useCallback(() => {
     setShowErrors(true);
@@ -198,13 +184,11 @@ export default function StepIncomeAndNominee() {
     const prevBaseline = (formData.personalDetailsBaseline || {}) as Record<string, unknown>;
     const mergedBaseline = {
       ...prevBaseline,
-      incomeRange,
       wantsNominee: wantsNominee === true,
       nominees: resolvedNominees,
     };
 
     updateFormData({
-      incomeRange,
       wantsNominee: wantsNominee === true,
       nominees: resolvedNominees,
       nomineeName: primaryNominee?.name || "",
@@ -230,7 +214,6 @@ export default function StepIncomeAndNominee() {
   }, [
     communicationAddressForNominee,
     formData.personalDetailsBaseline,
-    incomeRange,
     isFormValid,
     nextStep,
     nominees,
@@ -275,8 +258,8 @@ export default function StepIncomeAndNominee() {
   return (
     <StepCard step={stepLabel} maxWidth="2xl">
       <div className="page-header">
-        <h1 className="page-title">Income & nominee</h1>
-        <p className="page-subtitle">Select your income range and tell us if you would like to add a nominee.</p>
+        <h1 className="page-title">Nominee</h1>
+        <p className="page-subtitle">Tell us if you would like to add a nominee for your account.</p>
       </div>
 
       <form
@@ -286,38 +269,7 @@ export default function StepIncomeAndNominee() {
         }}
         className="space-y-6"
       >
-        {/* Income + Nominee */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label className="form-label flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-slate-400" />
-              Annual Income Range *
-            </label>
-            <Select value={incomeRange} onValueChange={setIncomeRange}>
-              <SelectTrigger className={`enterprise-input flex items-center justify-between ${showErrors && !incomeRange ? "error" : ""}`}>
-                <SelectValue placeholder="Select income range" />
-              </SelectTrigger>
-              <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                {incomeRanges.map((r) => (
-                  <SelectItem
-                    key={r.value}
-                    value={r.value}
-                    className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
-                  >
-                    {r.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {showErrors && !incomeRange && (
-              <p className="error-text">
-                <AlertCircle className="w-4 h-4" />
-                Please select an income range.
-              </p>
-            )}
-          </div>
-
-          <div className="rounded-[var(--radius-lg)] border border-gray-200 bg-white p-4 md:p-5 space-y-4">
+        <div className="rounded-[var(--radius-lg)] border border-gray-200 bg-white p-4 md:p-5 space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-gray-900">
@@ -360,7 +312,6 @@ export default function StepIncomeAndNominee() {
                 Please choose whether to add a nominee.
               </p>
             )}
-          </div>
         </div>
 
         {wantsNominee && (
@@ -605,7 +556,7 @@ export default function StepIncomeAndNominee() {
                               placeholder="e.g. Near metro station, temple"
                             />
                           </div>
-                          <div>
+                          <div className="md:col-span-2">
                             <label className="form-label">Pincode *</label>
                             <Input
                               value={nominee.guardianAddressPincode}
@@ -628,35 +579,37 @@ export default function StepIncomeAndNominee() {
                               placeholder="6-digit PIN"
                             />
                           </div>
-                          <div>
-                            <label className="form-label">City *</label>
-                            <Input
-                              value={nominee.guardianAddressCity}
-                              onChange={(e) =>
-                                setNominees((prev) =>
-                                  prev.map((item, idx) =>
-                                    idx === index ? { ...item, guardianAddressCity: e.target.value } : item
+                          <div className="md:col-span-2 grid grid-cols-2 gap-3 sm:gap-4">
+                            <div className="min-w-0">
+                              <label className="form-label">City *</label>
+                              <Input
+                                value={nominee.guardianAddressCity}
+                                onChange={(e) =>
+                                  setNominees((prev) =>
+                                    prev.map((item, idx) =>
+                                      idx === index ? { ...item, guardianAddressCity: e.target.value } : item
+                                    )
                                   )
-                                )
-                              }
-                              className={`enterprise-input ${showErrors && !nominee.guardianAddressCity?.trim() ? "error" : ""}`}
-                              placeholder="City"
-                            />
-                          </div>
-                          <div>
-                            <label className="form-label">State *</label>
-                            <Input
-                              value={nominee.guardianAddressState}
-                              onChange={(e) =>
-                                setNominees((prev) =>
-                                  prev.map((item, idx) =>
-                                    idx === index ? { ...item, guardianAddressState: e.target.value } : item
+                                }
+                                className={`enterprise-input ${showErrors && !nominee.guardianAddressCity?.trim() ? "error" : ""}`}
+                                placeholder="City"
+                              />
+                            </div>
+                            <div className="min-w-0">
+                              <label className="form-label">State *</label>
+                              <Input
+                                value={nominee.guardianAddressState}
+                                onChange={(e) =>
+                                  setNominees((prev) =>
+                                    prev.map((item, idx) =>
+                                      idx === index ? { ...item, guardianAddressState: e.target.value } : item
+                                    )
                                   )
-                                )
-                              }
-                              className={`enterprise-input ${showErrors && !nominee.guardianAddressState?.trim() ? "error" : ""}`}
-                              placeholder="State"
-                            />
+                                }
+                                className={`enterprise-input ${showErrors && !nominee.guardianAddressState?.trim() ? "error" : ""}`}
+                                placeholder="State"
+                              />
+                            </div>
                           </div>
                         </div>
                         {showErrors && !isGuardianAddressComplete(nominee) && (
@@ -780,7 +733,7 @@ export default function StepIncomeAndNominee() {
                           disabled={addressReadOnly}
                         />
                       </div>
-                      <div>
+                      <div className="md:col-span-2">
                         <label className="form-label">Pincode *</label>
                         <Input
                           value={nominee.addressPincode}
@@ -807,39 +760,41 @@ export default function StepIncomeAndNominee() {
                           disabled={addressReadOnly}
                         />
                       </div>
-                      <div>
-                        <label className="form-label">City *</label>
-                        <Input
-                          value={nominee.addressCity}
-                          onChange={(e) =>
-                            setNominees((prev) =>
-                              prev.map((item, idx) => (idx === index ? { ...item, addressCity: e.target.value } : item))
-                            )
-                          }
-                          className={`enterprise-input ${showErrors && !nominee.addressCity ? "error" : ""} ${
-                            addressReadOnly ? readOnlyAddressClass : ""
-                          }`}
-                          placeholder="City"
-                          readOnly={addressReadOnly}
-                          disabled={addressReadOnly}
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">State *</label>
-                        <Input
-                          value={nominee.addressState}
-                          onChange={(e) =>
-                            setNominees((prev) =>
-                              prev.map((item, idx) => (idx === index ? { ...item, addressState: e.target.value } : item))
-                            )
-                          }
-                          className={`enterprise-input ${showErrors && !nominee.addressState ? "error" : ""} ${
-                            addressReadOnly ? readOnlyAddressClass : ""
-                          }`}
-                          placeholder="State"
-                          readOnly={addressReadOnly}
-                          disabled={addressReadOnly}
-                        />
+                      <div className="md:col-span-2 grid grid-cols-2 gap-3 sm:gap-4">
+                        <div className="min-w-0">
+                          <label className="form-label">City *</label>
+                          <Input
+                            value={nominee.addressCity}
+                            onChange={(e) =>
+                              setNominees((prev) =>
+                                prev.map((item, idx) => (idx === index ? { ...item, addressCity: e.target.value } : item))
+                              )
+                            }
+                            className={`enterprise-input ${showErrors && !nominee.addressCity ? "error" : ""} ${
+                              addressReadOnly ? readOnlyAddressClass : ""
+                            }`}
+                            placeholder="City"
+                            readOnly={addressReadOnly}
+                            disabled={addressReadOnly}
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <label className="form-label">State *</label>
+                          <Input
+                            value={nominee.addressState}
+                            onChange={(e) =>
+                              setNominees((prev) =>
+                                prev.map((item, idx) => (idx === index ? { ...item, addressState: e.target.value } : item))
+                              )
+                            }
+                            className={`enterprise-input ${showErrors && !nominee.addressState ? "error" : ""} ${
+                              addressReadOnly ? readOnlyAddressClass : ""
+                            }`}
+                            placeholder="State"
+                            readOnly={addressReadOnly}
+                            disabled={addressReadOnly}
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
