@@ -59,7 +59,7 @@ const createEmptyNominee = (): Nominee => ({
   addressCity: "",
   addressState: "",
   addressPincode: "",
-  addressSource: "none",
+  addressSource: "communication",
   guardianFullName: "",
   guardianDob: "",
   guardianAddressLine1: "",
@@ -180,6 +180,22 @@ const mapAddressFieldsToNominee = (address: AddressFields) => ({
   addressPincode: address.pincode,
 });
 
+function normalizeNomineeAddressSource(
+  raw: NomineeAddressSource | undefined,
+  sameAsPermanent: boolean
+): NomineeAddressSource {
+  if (raw === "permanent") {
+    return sameAsPermanent ? "communication" : "custom";
+  }
+  if (raw === "none") {
+    return "communication";
+  }
+  if (raw === "communication" || raw === "custom") {
+    return raw;
+  }
+  return "communication";
+}
+
 export default function StepCombinedDetails() {
   const { nextStep, formData, updateFormData, setNomineeEnabled, setBottomBarContent, journeySteps, currentStepIndex, journeyType } =
     useJourney();
@@ -245,9 +261,11 @@ export default function StepCombinedDetails() {
         guardianAddressCity: nominee.guardianAddressCity || "",
         guardianAddressState: nominee.guardianAddressState || "",
         guardianAddressPincode: nominee.guardianAddressPincode || "",
-        addressSource:
+        addressSource: normalizeNomineeAddressSource(
           nominee.addressSource ||
-          (nominee.sameAsCommunicationAddress ? "communication" : "none"),
+            (nominee.sameAsCommunicationAddress ? "communication" : undefined),
+          formData.sameAsPermanentAddress !== false
+        ),
       }));
     }
     if (formData.nomineeName || formData.nomineeRelation || formData.nomineeDob || formData.nomineeAddress) {
@@ -265,8 +283,11 @@ export default function StepCombinedDetails() {
           addressCity: formData.nomineeAddressCity || "",
           addressState: formData.nomineeAddressState || "",
           addressPincode: formData.nomineeAddressPincode || "",
-          addressSource:
-            formData.nomineeAddressSource || (formData.nomineeSameAsCommunicationAddress ? "communication" : "none"),
+          addressSource: normalizeNomineeAddressSource(
+            formData.nomineeAddressSource ||
+              (formData.nomineeSameAsCommunicationAddress ? "communication" : undefined),
+            formData.sameAsPermanentAddress !== false
+          ),
         },
       ];
     }
@@ -318,6 +339,9 @@ export default function StepCombinedDetails() {
     [sameAsPermanentAddress, permanentAddressForNominee, communicationAddress]
   );
 
+  /** NTB + comm same as permanent → present address is single Aadhaar-style line (like Permanent Address block). */
+  const presentAddressIsAadhaarStyle = isNtb && sameAsPermanentAddress;
+
   useEffect(() => {
     if (!sameAsPermanentAddress) return;
     if (isNtb) {
@@ -334,13 +358,16 @@ export default function StepCombinedDetails() {
         if (nominee.addressSource === "communication") {
           return { ...nominee, ...communicationAddressForNominee };
         }
-        if (nominee.addressSource === "permanent") {
+        if (nominee.addressSource === "permanent" && !sameAsPermanentAddress) {
           return { ...nominee, ...permanentAddressForNominee };
+        }
+        if (nominee.addressSource === "permanent" && sameAsPermanentAddress) {
+          return { ...nominee, addressSource: "communication", ...communicationAddressForNominee };
         }
         return nominee;
       })
     );
-  }, [communicationAddressForNominee, permanentAddressForNominee, wantsNominee]);
+  }, [communicationAddressForNominee, permanentAddressForNominee, sameAsPermanentAddress, wantsNominee]);
 
   useEffect(() => {
     if (wantsNominee === true && nominees.length === 0) {
@@ -1217,7 +1244,12 @@ export default function StepCombinedDetails() {
 
             {nominees.map((nominee, index) => {
               const nomineeErrors = showErrors && !isNomineeComplete(nominee);
-              const addressDisabled = nominee.addressSource !== "custom";
+              const livesAtSameAddress =
+                nominee.addressSource === "communication" ||
+                (nominee.addressSource === "permanent" && sameAsPermanentAddress);
+              const addressReadOnly = livesAtSameAddress;
+              const readOnlyAddressClass =
+                "bg-gray-100 text-gray-500 cursor-not-allowed";
               const nomineeIsMinor = isMinorNominee(nominee.dob);
 
               return (
@@ -1498,157 +1530,178 @@ export default function StepCombinedDetails() {
 
                   <div className="space-y-2">
                     <p className="text-xs font-semibold text-gray-800">Nominee Address</p>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { value: "permanent", label: "Use permanent address" },
-                        ...(sameAsPermanentAddress
-                          ? []
-                          : [{ value: "communication", label: "Use communication address" }]),
-                        { value: "custom", label: "Enter a different address" },
-                      ].map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() =>
-                            setNominees((prev) =>
-                              prev.map((item, idx) => {
-                                if (idx !== index) return item;
-                                const next = { ...item, addressSource: option.value as NomineeAddressSource };
-                                if (option.value === "communication") {
-                                  return { ...next, ...communicationAddressForNominee };
-                                }
-                                if (option.value === "permanent") {
-                                  return { ...next, ...permanentAddressForNominee };
-                                }
-                                return next;
-                              })
-                            )
-                          }
-                          className={[
-                            "h-8 px-3 rounded-[999px] text-xs font-semibold border transition-colors",
-                            nominee.addressSource === option.value
-                              ? "bg-slate-900 text-white border-slate-900"
-                              : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
-                          ].join(" ")}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="form-label">Line 1 *</label>
-                      <Input
-                        value={nominee.addressLine1}
-                        onChange={(e) =>
-                          setNominees((prev) =>
-                            prev.map((item, idx) => (idx === index ? { ...item, addressLine1: e.target.value } : item))
-                          )
-                        }
-                        className={`enterprise-input ${showErrors && !nominee.addressLine1 ? "error" : ""}`}
-                        placeholder="House/Flat, Building"
-                        disabled={addressDisabled}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="form-label">Line 2 *</label>
-                      <Input
-                        value={nominee.addressLine2}
-                        onChange={(e) =>
-                          setNominees((prev) =>
-                            prev.map((item, idx) => (idx === index ? { ...item, addressLine2: e.target.value } : item))
-                          )
-                        }
-                        className={`enterprise-input ${showErrors && !nominee.addressLine2 ? "error" : ""}`}
-                        placeholder="Street, Locality"
-                        disabled={addressDisabled}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="form-label">Line 3</label>
-                      <Input
-                        value={nominee.addressLine3}
-                        onChange={(e) =>
-                          setNominees((prev) =>
-                            prev.map((item, idx) => (idx === index ? { ...item, addressLine3: e.target.value } : item))
-                          )
-                        }
-                        className="enterprise-input"
-                        placeholder="Area, colony (optional)"
-                        disabled={addressDisabled}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="form-label">Nearest landmark</label>
-                      <Input
-                        value={nominee.addressNearestLandmark}
-                        onChange={(e) =>
-                          setNominees((prev) =>
-                            prev.map((item, idx) =>
-                              idx === index ? { ...item, addressNearestLandmark: e.target.value } : item
-                            )
-                          )
-                        }
-                        className="enterprise-input"
-                        placeholder="e.g. Near metro station, temple"
-                        disabled={addressDisabled}
-                      />
-                    </div>
-                    <div>
-                      <label className="form-label">Pincode *</label>
-                      <Input
-                        value={nominee.addressPincode}
-                        onChange={(e) =>
+                    <label className="flex items-start gap-2 text-sm text-gray-800 cursor-pointer select-none">
+                      <Checkbox
+                        checked={livesAtSameAddress}
+                        onCheckedChange={(v) => {
+                          const on = v === true;
                           setNominees((prev) =>
                             prev.map((item, idx) => {
                               if (idx !== index) return item;
-                              const nextPincode = e.target.value;
-                              const lookup = getCityStateForPincode(nextPincode);
-                              return {
-                                ...item,
-                                addressPincode: nextPincode,
-                                addressCity: lookup?.city || item.addressCity,
-                                addressState: lookup?.state || item.addressState,
-                              };
+                              if (on) {
+                                return {
+                                  ...item,
+                                  addressSource: "communication",
+                                  ...communicationAddressForNominee,
+                                };
+                              }
+                              return { ...item, addressSource: "custom" };
                             })
-                          )
-                        }
-                        className={`enterprise-input ${showErrors && !nominee.addressPincode ? "error" : ""}`}
-                        placeholder="6-digit PIN"
-                        disabled={addressDisabled}
+                          );
+                        }}
+                        className="mt-0.5 rounded-[var(--radius)] border-gray-300 data-[state=checked]:bg-[#004C8F] data-[state=checked]:border-[#004C8F]"
                       />
-                    </div>
-                    <div>
-                      <label className="form-label">City *</label>
-                      <Input
-                        value={nominee.addressCity}
-                        onChange={(e) =>
-                          setNominees((prev) =>
-                            prev.map((item, idx) => (idx === index ? { ...item, addressCity: e.target.value } : item))
-                          )
-                        }
-                        className={`enterprise-input ${showErrors && !nominee.addressCity ? "error" : ""}`}
-                        placeholder="City"
-                        disabled={addressDisabled}
-                      />
-                    </div>
-                    <div>
-                      <label className="form-label">State *</label>
-                      <Input
-                        value={nominee.addressState}
-                        onChange={(e) =>
-                          setNominees((prev) =>
-                            prev.map((item, idx) => (idx === index ? { ...item, addressState: e.target.value } : item))
-                          )
-                        }
-                        className={`enterprise-input ${showErrors && !nominee.addressState ? "error" : ""}`}
-                        placeholder="State"
-                        disabled={addressDisabled}
-                      />
-                    </div>
+                      <span>
+                        <span className="font-semibold">Nominee lives at same address</span>
+                        <span className="block text-xs text-gray-600 font-normal mt-0.5">
+                          Uses your present address (permanent or communication, as above). Edit it only in your address
+                          section, not here.
+                        </span>
+                      </span>
+                    </label>
                   </div>
+
+                  {livesAtSameAddress && presentAddressIsAadhaarStyle ? (
+                    <div>
+                      <label className="form-label">Address</label>
+                      <Input
+                        value={permanentAddressText}
+                        readOnly
+                        className={`enterprise-input ${readOnlyAddressClass}`}
+                        placeholder="Aadhaar address"
+                      />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="form-label">Line 1 *</label>
+                        <Input
+                          value={nominee.addressLine1}
+                          onChange={(e) =>
+                            setNominees((prev) =>
+                              prev.map((item, idx) => (idx === index ? { ...item, addressLine1: e.target.value } : item))
+                            )
+                          }
+                          className={`enterprise-input ${showErrors && !nominee.addressLine1 ? "error" : ""} ${
+                            addressReadOnly ? readOnlyAddressClass : ""
+                          }`}
+                          placeholder="House/Flat, Building"
+                          readOnly={addressReadOnly}
+                          disabled={addressReadOnly}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="form-label">Line 2 *</label>
+                        <Input
+                          value={nominee.addressLine2}
+                          onChange={(e) =>
+                            setNominees((prev) =>
+                              prev.map((item, idx) => (idx === index ? { ...item, addressLine2: e.target.value } : item))
+                            )
+                          }
+                          className={`enterprise-input ${showErrors && !nominee.addressLine2 ? "error" : ""} ${
+                            addressReadOnly ? readOnlyAddressClass : ""
+                          }`}
+                          placeholder="Street, Locality"
+                          readOnly={addressReadOnly}
+                          disabled={addressReadOnly}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="form-label">Line 3</label>
+                        <Input
+                          value={nominee.addressLine3}
+                          onChange={(e) =>
+                            setNominees((prev) =>
+                              prev.map((item, idx) => (idx === index ? { ...item, addressLine3: e.target.value } : item))
+                            )
+                          }
+                          className={`enterprise-input ${addressReadOnly ? readOnlyAddressClass : ""}`}
+                          placeholder="Area, colony (optional)"
+                          readOnly={addressReadOnly}
+                          disabled={addressReadOnly}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="form-label">Nearest landmark</label>
+                        <Input
+                          value={nominee.addressNearestLandmark}
+                          onChange={(e) =>
+                            setNominees((prev) =>
+                              prev.map((item, idx) =>
+                                idx === index ? { ...item, addressNearestLandmark: e.target.value } : item
+                              )
+                            )
+                          }
+                          className={`enterprise-input ${addressReadOnly ? readOnlyAddressClass : ""}`}
+                          placeholder="e.g. Near metro station, temple"
+                          readOnly={addressReadOnly}
+                          disabled={addressReadOnly}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">Pincode *</label>
+                        <Input
+                          value={nominee.addressPincode}
+                          onChange={(e) =>
+                            setNominees((prev) =>
+                              prev.map((item, idx) => {
+                                if (idx !== index) return item;
+                                const nextPincode = e.target.value;
+                                const lookup = getCityStateForPincode(nextPincode);
+                                return {
+                                  ...item,
+                                  addressPincode: nextPincode,
+                                  addressCity: lookup?.city || item.addressCity,
+                                  addressState: lookup?.state || item.addressState,
+                                };
+                              })
+                            )
+                          }
+                          className={`enterprise-input ${showErrors && !nominee.addressPincode ? "error" : ""} ${
+                            addressReadOnly ? readOnlyAddressClass : ""
+                          }`}
+                          placeholder="6-digit PIN"
+                          readOnly={addressReadOnly}
+                          disabled={addressReadOnly}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">City *</label>
+                        <Input
+                          value={nominee.addressCity}
+                          onChange={(e) =>
+                            setNominees((prev) =>
+                              prev.map((item, idx) => (idx === index ? { ...item, addressCity: e.target.value } : item))
+                            )
+                          }
+                          className={`enterprise-input ${showErrors && !nominee.addressCity ? "error" : ""} ${
+                            addressReadOnly ? readOnlyAddressClass : ""
+                          }`}
+                          placeholder="City"
+                          readOnly={addressReadOnly}
+                          disabled={addressReadOnly}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">State *</label>
+                        <Input
+                          value={nominee.addressState}
+                          onChange={(e) =>
+                            setNominees((prev) =>
+                              prev.map((item, idx) => (idx === index ? { ...item, addressState: e.target.value } : item))
+                            )
+                          }
+                          className={`enterprise-input ${showErrors && !nominee.addressState ? "error" : ""} ${
+                            addressReadOnly ? readOnlyAddressClass : ""
+                          }`}
+                          placeholder="State"
+                          readOnly={addressReadOnly}
+                          disabled={addressReadOnly}
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {nomineeErrors && (
                     <p className="error-text">

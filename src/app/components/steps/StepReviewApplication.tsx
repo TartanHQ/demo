@@ -694,35 +694,48 @@ export default function StepReviewApplication() {
                     id: `nominee-${index}`,
                     label: `Nominee ${index + 1}`,
                     value: [nominee.name, addressValue].filter(Boolean).join(" • ") || "—",
-                    getDraft: () => ({
-                        name: nominee.name || "",
-                        relation: nominee.relation || "",
-                        dob: nominee.dob || "",
-                        addressSource: nominee.addressSource || "custom",
-                        addressLine1: nominee.addressLine1 || "",
-                        addressLine2: nominee.addressLine2 || "",
-                        addressLine3: nominee.addressLine3 || "",
-                        addressNearestLandmark: nominee.addressNearestLandmark || "",
-                        addressCity: nominee.addressCity || "",
-                        addressState: nominee.addressState || "",
-                        addressPincode: nominee.addressPincode || "",
-                    }),
+                    getDraft: () => {
+                        const raw = nominee.addressSource || "custom";
+                        const normalizedSource =
+                            raw === "permanent" && formData.sameAsPermanentAddress !== false
+                                ? "communication"
+                                : raw === "none"
+                                  ? "communication"
+                                  : raw === "permanent"
+                                    ? "custom"
+                                    : raw;
+                        return {
+                            name: nominee.name || "",
+                            relation: nominee.relation || "",
+                            dob: nominee.dob || "",
+                            addressSource: normalizedSource,
+                            addressLine1: nominee.addressLine1 || "",
+                            addressLine2: nominee.addressLine2 || "",
+                            addressLine3: nominee.addressLine3 || "",
+                            addressNearestLandmark: nominee.addressNearestLandmark || "",
+                            addressCity: nominee.addressCity || "",
+                            addressState: nominee.addressState || "",
+                            addressPincode: nominee.addressPincode || "",
+                        };
+                    },
                     renderEdit: (draft, setDraft) => {
-                        const resolvedAddress =
-                            draft.addressSource === "permanent"
-                                ? permanentNomineeAddress
-                                : draft.addressSource === "communication"
-                                ? communicationNomineeAddress
-                                : {
-                                      line1: draft.addressLine1 || "",
-                                      line2: draft.addressLine2 || "",
-                                      line3: draft.addressLine3 || "",
-                                      nearestLandmark: draft.addressNearestLandmark || "",
-                                      city: draft.addressCity || "",
-                                      state: draft.addressState || "",
-                                      pincode: draft.addressPincode || "",
-                                  };
-                        const addressDisabled = draft.addressSource !== "custom";
+                        const livesAtSame =
+                            draft.addressSource === "communication" ||
+                            (draft.addressSource === "permanent" && formData.sameAsPermanentAddress !== false);
+                        const presentAadhaarStyle = isNtb && formData.sameAsPermanentAddress;
+                        const resolvedAddress = livesAtSame
+                            ? communicationNomineeAddress
+                            : {
+                                  line1: draft.addressLine1 || "",
+                                  line2: draft.addressLine2 || "",
+                                  line3: draft.addressLine3 || "",
+                                  nearestLandmark: draft.addressNearestLandmark || "",
+                                  city: draft.addressCity || "",
+                                  state: draft.addressState || "",
+                                  pincode: draft.addressPincode || "",
+                              };
+                        const addressReadOnly = livesAtSame;
+                        const readOnlyCls = "bg-gray-100 text-gray-500 cursor-not-allowed";
                         return (
                             <div className="space-y-3">
                                 <Select
@@ -770,159 +783,144 @@ export default function StepReviewApplication() {
                                     onChange={(e) => setDraft({ ...draft, dob: e.target.value })}
                                     className="enterprise-input"
                                 />
-                                <div className="flex flex-wrap gap-2">
-                                    {[
-                                        { value: "permanent", label: "Use permanent address" },
-                                        ...(formData.sameAsPermanentAddress
-                                            ? []
-                                            : [{ value: "communication", label: "Use communication address" }]),
-                                        { value: "custom", label: "Enter a different address" },
-                                    ].map((option) => (
-                                        <button
-                                            key={option.value}
-                                            type="button"
-                                            onClick={() =>
+                                <label className="flex items-start gap-2 text-sm text-gray-800 cursor-pointer select-none">
+                                    <Checkbox
+                                        checked={livesAtSame}
+                                        onCheckedChange={(v) => {
+                                            const on = v === true;
+                                            if (on) {
                                                 setDraft({
                                                     ...draft,
-                                                    addressSource: option.value,
-                                                    addressLine1:
-                                                        option.value === "permanent"
-                                                            ? permanentNomineeAddress.line1
-                                                            : option.value === "communication"
-                                                            ? communicationNomineeAddress.line1
-                                                            : draft.addressLine1,
-                                                    addressLine2:
-                                                        option.value === "permanent"
-                                                            ? permanentNomineeAddress.line2
-                                                            : option.value === "communication"
-                                                            ? communicationNomineeAddress.line2
-                                                            : draft.addressLine2,
-                                                    addressLine3:
-                                                        option.value === "permanent"
-                                                            ? permanentNomineeAddress.line3
-                                                            : option.value === "communication"
-                                                            ? communicationNomineeAddress.line3
-                                                            : draft.addressLine3,
-                                                    addressNearestLandmark:
-                                                        option.value === "permanent"
-                                                            ? permanentNomineeAddress.nearestLandmark
-                                                            : option.value === "communication"
-                                                            ? communicationNomineeAddress.nearestLandmark
-                                                            : draft.addressNearestLandmark,
-                                                    addressCity:
-                                                        option.value === "permanent"
-                                                            ? permanentNomineeAddress.city
-                                                            : option.value === "communication"
-                                                            ? communicationNomineeAddress.city
-                                                            : draft.addressCity,
-                                                    addressState:
-                                                        option.value === "permanent"
-                                                            ? permanentNomineeAddress.state
-                                                            : option.value === "communication"
-                                                            ? communicationNomineeAddress.state
-                                                            : draft.addressState,
-                                                    addressPincode:
-                                                        option.value === "permanent"
-                                                            ? permanentNomineeAddress.pincode
-                                                            : option.value === "communication"
-                                                            ? communicationNomineeAddress.pincode
-                                                            : draft.addressPincode,
-                                                })
+                                                    addressSource: "communication",
+                                                    addressLine1: communicationNomineeAddress.line1,
+                                                    addressLine2: communicationNomineeAddress.line2,
+                                                    addressLine3: communicationNomineeAddress.line3,
+                                                    addressNearestLandmark: communicationNomineeAddress.nearestLandmark,
+                                                    addressCity: communicationNomineeAddress.city,
+                                                    addressState: communicationNomineeAddress.state,
+                                                    addressPincode: communicationNomineeAddress.pincode,
+                                                });
+                                            } else {
+                                                setDraft({ ...draft, addressSource: "custom" });
                                             }
-                                            className={[
-                                                "h-8 px-3 rounded-[999px] text-xs font-semibold border transition-colors",
-                                                draft.addressSource === option.value
-                                                    ? "bg-slate-900 text-white border-slate-900"
-                                                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
-                                            ].join(" ")}
-                                        >
-                                            {option.label}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div className="md:col-span-2">
-                                        <Input
-                                            value={resolvedAddress.line1 || ""}
-                                            onChange={(e) => setDraft({ ...draft, addressLine1: e.target.value })}
-                                            className="enterprise-input"
-                                            placeholder="House/Flat, Building"
-                                            disabled={addressDisabled}
-                                        />
-                                    </div>
-                                    <div className="md:col-span-2">
-                                        <Input
-                                            value={resolvedAddress.line2 || ""}
-                                            onChange={(e) => setDraft({ ...draft, addressLine2: e.target.value })}
-                                            className="enterprise-input"
-                                            placeholder="Street, Locality"
-                                            disabled={addressDisabled}
-                                        />
-                                    </div>
-                                    <div className="md:col-span-2">
-                                        <Input
-                                            value={resolvedAddress.line3 || ""}
-                                            onChange={(e) => setDraft({ ...draft, addressLine3: e.target.value })}
-                                            className="enterprise-input"
-                                            placeholder="Area, colony (optional)"
-                                            disabled={addressDisabled}
-                                        />
-                                    </div>
-                                    <div className="md:col-span-2">
-                                        <Input
-                                            value={resolvedAddress.nearestLandmark || ""}
-                                            onChange={(e) => setDraft({ ...draft, addressNearestLandmark: e.target.value })}
-                                            className="enterprise-input"
-                                            placeholder="Nearest landmark"
-                                            disabled={addressDisabled}
-                                        />
-                                    </div>
+                                        }}
+                                        className="mt-0.5 rounded-[var(--radius)] border-gray-300 data-[state=checked]:bg-[#004C8F] data-[state=checked]:border-[#004C8F]"
+                                    />
+                                    <span>
+                                        <span className="font-semibold">Nominee lives at same address</span>
+                                        <span className="block text-xs text-gray-600 font-normal mt-0.5">
+                                            Present address from your application. Edit it in the address section above.
+                                        </span>
+                                    </span>
+                                </label>
+                                {addressReadOnly && presentAadhaarStyle ? (
                                     <div>
+                                        <label className="text-xs font-semibold text-gray-600">Address</label>
                                         <Input
-                                            value={resolvedAddress.pincode || ""}
-                                            onChange={(e) => setDraft({ ...draft, addressPincode: e.target.value })}
-                                            className="enterprise-input"
-                                            placeholder="6-digit PIN"
-                                            disabled={addressDisabled}
+                                            value={formData.currentAddress || communicationNomineeAddress.line1 || ""}
+                                            readOnly
+                                            className={`enterprise-input mt-1 ${readOnlyCls}`}
+                                            placeholder="Aadhaar address"
                                         />
                                     </div>
-                                    <div>
-                                        <Input
-                                            value={resolvedAddress.city || ""}
-                                            onChange={(e) => setDraft({ ...draft, addressCity: e.target.value })}
-                                            className="enterprise-input"
-                                            placeholder="City"
-                                            disabled={addressDisabled}
-                                        />
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div className="md:col-span-2">
+                                            <Input
+                                                value={resolvedAddress.line1 || ""}
+                                                onChange={(e) => setDraft({ ...draft, addressLine1: e.target.value })}
+                                                className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                                placeholder="House/Flat, Building"
+                                                readOnly={addressReadOnly}
+                                                disabled={addressReadOnly}
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <Input
+                                                value={resolvedAddress.line2 || ""}
+                                                onChange={(e) => setDraft({ ...draft, addressLine2: e.target.value })}
+                                                className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                                placeholder="Street, Locality"
+                                                readOnly={addressReadOnly}
+                                                disabled={addressReadOnly}
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <Input
+                                                value={resolvedAddress.line3 || ""}
+                                                onChange={(e) => setDraft({ ...draft, addressLine3: e.target.value })}
+                                                className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                                placeholder="Area, colony (optional)"
+                                                readOnly={addressReadOnly}
+                                                disabled={addressReadOnly}
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <Input
+                                                value={resolvedAddress.nearestLandmark || ""}
+                                                onChange={(e) =>
+                                                    setDraft({ ...draft, addressNearestLandmark: e.target.value })
+                                                }
+                                                className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                                placeholder="Nearest landmark"
+                                                readOnly={addressReadOnly}
+                                                disabled={addressReadOnly}
+                                            />
+                                        </div>
+                                        <div>
+                                            <Input
+                                                value={resolvedAddress.pincode || ""}
+                                                onChange={(e) => setDraft({ ...draft, addressPincode: e.target.value })}
+                                                className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                                placeholder="6-digit PIN"
+                                                readOnly={addressReadOnly}
+                                                disabled={addressReadOnly}
+                                            />
+                                        </div>
+                                        <div>
+                                            <Input
+                                                value={resolvedAddress.city || ""}
+                                                onChange={(e) => setDraft({ ...draft, addressCity: e.target.value })}
+                                                className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                                placeholder="City"
+                                                readOnly={addressReadOnly}
+                                                disabled={addressReadOnly}
+                                            />
+                                        </div>
+                                        <div>
+                                            <Input
+                                                value={resolvedAddress.state || ""}
+                                                onChange={(e) => setDraft({ ...draft, addressState: e.target.value })}
+                                                className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                                placeholder="State"
+                                                readOnly={addressReadOnly}
+                                                disabled={addressReadOnly}
+                                            />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <Input
-                                            value={resolvedAddress.state || ""}
-                                            onChange={(e) => setDraft({ ...draft, addressState: e.target.value })}
-                                            className="enterprise-input"
-                                            placeholder="State"
-                                            disabled={addressDisabled}
-                                        />
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         );
                     },
                     onSave: (draft) => {
                         const selectedAddress =
-                            draft.addressSource === "permanent"
-                                ? permanentNomineeAddress
-                                : draft.addressSource === "communication"
+                            draft.addressSource === "communication" ||
+                            (draft.addressSource === "permanent" && formData.sameAsPermanentAddress !== false)
                                 ? communicationNomineeAddress
-                                : {
-                                      line1: draft.addressLine1 || "",
-                                      line2: draft.addressLine2 || "",
-                                      line3: draft.addressLine3 || "",
-                                      nearestLandmark: draft.addressNearestLandmark || "",
-                                      city: draft.addressCity || "",
-                                      state: draft.addressState || "",
-                                      pincode: draft.addressPincode || "",
-                                  };
+                                : draft.addressSource === "permanent"
+                                  ? permanentNomineeAddress
+                                  : {
+                                        line1: draft.addressLine1 || "",
+                                        line2: draft.addressLine2 || "",
+                                        line3: draft.addressLine3 || "",
+                                        nearestLandmark: draft.addressNearestLandmark || "",
+                                        city: draft.addressCity || "",
+                                        state: draft.addressState || "",
+                                        pincode: draft.addressPincode || "",
+                                    };
+                        const saveAsPresent =
+                            draft.addressSource === "communication" ||
+                            (draft.addressSource === "permanent" && formData.sameAsPermanentAddress !== false);
                         const updated = nominees.map((item: any, idx: number) => {
                             if (idx !== index) return item;
                             return {
@@ -937,7 +935,7 @@ export default function StepReviewApplication() {
                                 addressCity: selectedAddress.city || "",
                                 addressState: selectedAddress.state || "",
                                 addressPincode: selectedAddress.pincode || "",
-                                addressSource: draft.addressSource || "custom",
+                                addressSource: saveAsPresent ? "communication" : draft.addressSource || "custom",
                             };
                         });
                         const primaryNominee = updated[0];
@@ -963,11 +961,12 @@ export default function StepReviewApplication() {
                                 pincode: primaryNominee?.addressPincode,
                             }),
                             nomineeAddressSource: primaryNominee?.addressSource || "custom",
+                            nomineeSameAsCommunicationAddress: primaryNominee?.addressSource === "communication",
                         });
                     },
                     validate: (draft) => {
                         if (isBlank(draft.addressSource) || draft.addressSource === "none") {
-                            return "Please choose a nominee address option.";
+                            return "Please confirm nominee address (same as yours or enter manually).";
                         }
                         if (isBlank(draft.relation)) {
                             return "Please select a relationship.";
@@ -1309,6 +1308,15 @@ export default function StepReviewApplication() {
         ];
 
         const nomineeEnabled = !!formData.wantsNominee;
+        const etbPresentNomineeAddress = {
+            line1: formData.communicationAddressLine1 || "",
+            line2: formData.communicationAddressLine2 || "",
+            line3: formData.communicationAddressLine3 || "",
+            nearestLandmark: formData.communicationAddressNearestLandmark || "",
+            city: formData.communicationAddressCity || "",
+            state: formData.communicationAddressState || "",
+            pincode: formData.communicationAddressPincode || "",
+        };
         const nominee: ReviewItem[] = nomineeEnabled
             ? [
                   {
@@ -1329,141 +1337,241 @@ export default function StepReviewApplication() {
                           ]
                               .filter(Boolean)
                               .join(" • ") || "—",
-                      getDraft: () => ({
-                          name: formData.nomineeName || "",
-                          relation: formData.nomineeRelation || "",
-                          dob: formData.nomineeDob || "",
-                          addressLine1: formData.nomineeAddressLine1 || "",
-                          addressLine2: formData.nomineeAddressLine2 || "",
-                          addressLine3: formData.nomineeAddressLine3 || "",
-                          addressNearestLandmark: formData.nomineeAddressNearestLandmark || "",
-                          addressCity: formData.nomineeAddressCity || "",
-                          addressState: formData.nomineeAddressState || "",
-                          addressPincode: formData.nomineeAddressPincode || "",
-                      }),
-                      renderEdit: (draft, setDraft) => (
-                          <div className="space-y-3">
-                              <Select value={draft.relation || ""} onValueChange={(val) => setDraft({ ...draft, relation: val })}>
-                                  <SelectTrigger className="enterprise-input flex items-center justify-between">
-                                      <SelectValue placeholder="Select relationship" />
-                                  </SelectTrigger>
-                                  <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                                      {nomineeRelationOptions.map((option) => (
-                                          <SelectItem
-                                              key={option.value}
-                                              value={option.value}
-                                              className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
-                                          >
-                                              {option.label}
-                                          </SelectItem>
-                                      ))}
-                                  </SelectContent>
-                              </Select>
-                              <Input
-                                  value={draft.name || ""}
-                                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                                  className="enterprise-input"
-                                  placeholder="Nominee name"
-                              />
-                              <Input
-                                  type="date"
-                                  value={draft.dob || ""}
-                                  onChange={(e) => setDraft({ ...draft, dob: e.target.value })}
-                                  className="enterprise-input"
-                              />
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                  <div className="md:col-span-2">
-                                      <Input
-                                          value={draft.addressLine1 || ""}
-                                          onChange={(e) => setDraft({ ...draft, addressLine1: e.target.value })}
-                                          className="enterprise-input"
-                                          placeholder="House/Flat, Building"
+                      getDraft: () => {
+                          const raw = formData.nomineeAddressSource || "custom";
+                          const normalizedSource =
+                              raw === "permanent" && formData.sameAsPermanentAddress !== false
+                                  ? "communication"
+                                  : raw === "none"
+                                    ? "communication"
+                                    : raw === "permanent"
+                                      ? "custom"
+                                      : raw;
+                          return {
+                              name: formData.nomineeName || "",
+                              relation: formData.nomineeRelation || "",
+                              dob: formData.nomineeDob || "",
+                              addressSource: normalizedSource,
+                              addressLine1: formData.nomineeAddressLine1 || "",
+                              addressLine2: formData.nomineeAddressLine2 || "",
+                              addressLine3: formData.nomineeAddressLine3 || "",
+                              addressNearestLandmark: formData.nomineeAddressNearestLandmark || "",
+                              addressCity: formData.nomineeAddressCity || "",
+                              addressState: formData.nomineeAddressState || "",
+                              addressPincode: formData.nomineeAddressPincode || "",
+                          };
+                      },
+                      renderEdit: (draft, setDraft) => {
+                          const livesAtSame =
+                              draft.addressSource === "communication" ||
+                              (draft.addressSource === "permanent" && formData.sameAsPermanentAddress !== false);
+                          const resolvedAddress = livesAtSame
+                              ? etbPresentNomineeAddress
+                              : {
+                                    line1: draft.addressLine1 || "",
+                                    line2: draft.addressLine2 || "",
+                                    line3: draft.addressLine3 || "",
+                                    nearestLandmark: draft.addressNearestLandmark || "",
+                                    city: draft.addressCity || "",
+                                    state: draft.addressState || "",
+                                    pincode: draft.addressPincode || "",
+                                };
+                          const addressReadOnly = livesAtSame;
+                          const readOnlyCls = "bg-gray-100 text-gray-500 cursor-not-allowed";
+                          return (
+                              <div className="space-y-3">
+                                  <Select
+                                      value={draft.relation || ""}
+                                      onValueChange={(val) => setDraft({ ...draft, relation: val })}
+                                  >
+                                      <SelectTrigger className="enterprise-input flex items-center justify-between">
+                                          <SelectValue placeholder="Select relationship" />
+                                      </SelectTrigger>
+                                      <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                                          {nomineeRelationOptions.map((option) => (
+                                              <SelectItem
+                                                  key={option.value}
+                                                  value={option.value}
+                                                  className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
+                                              >
+                                                  {option.label}
+                                              </SelectItem>
+                                          ))}
+                                      </SelectContent>
+                                  </Select>
+                                  <Input
+                                      value={draft.name || ""}
+                                      onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                                      className="enterprise-input"
+                                      placeholder="Nominee name"
+                                  />
+                                  <Input
+                                      type="date"
+                                      value={draft.dob || ""}
+                                      onChange={(e) => setDraft({ ...draft, dob: e.target.value })}
+                                      className="enterprise-input"
+                                  />
+                                  <label className="flex items-start gap-2 text-sm text-gray-800 cursor-pointer select-none">
+                                      <Checkbox
+                                          checked={livesAtSame}
+                                          onCheckedChange={(v) => {
+                                              const on = v === true;
+                                              if (on) {
+                                                  setDraft({
+                                                      ...draft,
+                                                      addressSource: "communication",
+                                                      addressLine1: etbPresentNomineeAddress.line1,
+                                                      addressLine2: etbPresentNomineeAddress.line2,
+                                                      addressLine3: etbPresentNomineeAddress.line3,
+                                                      addressNearestLandmark: etbPresentNomineeAddress.nearestLandmark,
+                                                      addressCity: etbPresentNomineeAddress.city,
+                                                      addressState: etbPresentNomineeAddress.state,
+                                                      addressPincode: etbPresentNomineeAddress.pincode,
+                                                  });
+                                              } else {
+                                                  setDraft({ ...draft, addressSource: "custom" });
+                                              }
+                                          }}
+                                          className="mt-0.5 rounded-[var(--radius)] border-gray-300 data-[state=checked]:bg-[#004C8F] data-[state=checked]:border-[#004C8F]"
                                       />
-                                  </div>
-                                  <div className="md:col-span-2">
-                                      <Input
-                                          value={draft.addressLine2 || ""}
-                                          onChange={(e) => setDraft({ ...draft, addressLine2: e.target.value })}
-                                          className="enterprise-input"
-                                          placeholder="Street, Locality"
-                                      />
-                                  </div>
-                                  <div className="md:col-span-2">
-                                      <Input
-                                          value={draft.addressLine3 || ""}
-                                          onChange={(e) => setDraft({ ...draft, addressLine3: e.target.value })}
-                                          className="enterprise-input"
-                                          placeholder="Area, colony (optional)"
-                                      />
-                                  </div>
-                                  <div className="md:col-span-2">
-                                      <Input
-                                          value={draft.addressNearestLandmark || ""}
-                                          onChange={(e) => setDraft({ ...draft, addressNearestLandmark: e.target.value })}
-                                          className="enterprise-input"
-                                          placeholder="Nearest landmark"
-                                      />
-                                  </div>
-                                  <div>
-                                      <Input
-                                          value={draft.addressPincode || ""}
-                                          onChange={(e) => setDraft({ ...draft, addressPincode: e.target.value })}
-                                          className="enterprise-input"
-                                          placeholder="6-digit PIN"
-                                      />
-                                  </div>
-                                  <div>
-                                      <Input
-                                          value={draft.addressCity || ""}
-                                          onChange={(e) => setDraft({ ...draft, addressCity: e.target.value })}
-                                          className="enterprise-input"
-                                          placeholder="City"
-                                      />
-                                  </div>
-                                  <div>
-                                      <Input
-                                          value={draft.addressState || ""}
-                                          onChange={(e) => setDraft({ ...draft, addressState: e.target.value })}
-                                          className="enterprise-input"
-                                          placeholder="State"
-                                      />
+                                      <span>
+                                          <span className="font-semibold">Nominee lives at same address</span>
+                                          <span className="block text-xs text-gray-600 font-normal mt-0.5">
+                                              Present address from your application. Edit it in the address section
+                                              above.
+                                          </span>
+                                      </span>
+                                  </label>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                      <div className="md:col-span-2">
+                                          <Input
+                                              value={resolvedAddress.line1 || ""}
+                                              onChange={(e) => setDraft({ ...draft, addressLine1: e.target.value })}
+                                              className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                              placeholder="House/Flat, Building"
+                                              readOnly={addressReadOnly}
+                                              disabled={addressReadOnly}
+                                          />
+                                      </div>
+                                      <div className="md:col-span-2">
+                                          <Input
+                                              value={resolvedAddress.line2 || ""}
+                                              onChange={(e) => setDraft({ ...draft, addressLine2: e.target.value })}
+                                              className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                              placeholder="Street, Locality"
+                                              readOnly={addressReadOnly}
+                                              disabled={addressReadOnly}
+                                          />
+                                      </div>
+                                      <div className="md:col-span-2">
+                                          <Input
+                                              value={resolvedAddress.line3 || ""}
+                                              onChange={(e) => setDraft({ ...draft, addressLine3: e.target.value })}
+                                              className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                              placeholder="Area, colony (optional)"
+                                              readOnly={addressReadOnly}
+                                              disabled={addressReadOnly}
+                                          />
+                                      </div>
+                                      <div className="md:col-span-2">
+                                          <Input
+                                              value={resolvedAddress.nearestLandmark || ""}
+                                              onChange={(e) =>
+                                                  setDraft({ ...draft, addressNearestLandmark: e.target.value })
+                                              }
+                                              className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                              placeholder="Nearest landmark"
+                                              readOnly={addressReadOnly}
+                                              disabled={addressReadOnly}
+                                          />
+                                      </div>
+                                      <div>
+                                          <Input
+                                              value={resolvedAddress.pincode || ""}
+                                              onChange={(e) => setDraft({ ...draft, addressPincode: e.target.value })}
+                                              className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                              placeholder="6-digit PIN"
+                                              readOnly={addressReadOnly}
+                                              disabled={addressReadOnly}
+                                          />
+                                      </div>
+                                      <div>
+                                          <Input
+                                              value={resolvedAddress.city || ""}
+                                              onChange={(e) => setDraft({ ...draft, addressCity: e.target.value })}
+                                              className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                              placeholder="City"
+                                              readOnly={addressReadOnly}
+                                              disabled={addressReadOnly}
+                                          />
+                                      </div>
+                                      <div>
+                                          <Input
+                                              value={resolvedAddress.state || ""}
+                                              onChange={(e) => setDraft({ ...draft, addressState: e.target.value })}
+                                              className={`enterprise-input ${addressReadOnly ? readOnlyCls : ""}`}
+                                              placeholder="State"
+                                              readOnly={addressReadOnly}
+                                              disabled={addressReadOnly}
+                                          />
+                                      </div>
                                   </div>
                               </div>
-                          </div>
-                      ),
-                      onSave: (draft) =>
+                          );
+                      },
+                      onSave: (draft) => {
+                          const saveAsPresent =
+                              draft.addressSource === "communication" ||
+                              (draft.addressSource === "permanent" && formData.sameAsPermanentAddress !== false);
+                          const selected = saveAsPresent
+                              ? etbPresentNomineeAddress
+                              : {
+                                    line1: draft.addressLine1 || "",
+                                    line2: draft.addressLine2 || "",
+                                    line3: draft.addressLine3 || "",
+                                    nearestLandmark: draft.addressNearestLandmark || "",
+                                    city: draft.addressCity || "",
+                                    state: draft.addressState || "",
+                                    pincode: draft.addressPincode || "",
+                                };
                           updateFormData({
                               nomineeName: draft.name || "",
                               nomineeRelation: draft.relation || "",
                               nomineeDob: draft.dob || "",
-                              nomineeAddressLine1: draft.addressLine1 || "",
-                              nomineeAddressLine2: draft.addressLine2 || "",
-                              nomineeAddressLine3: draft.addressLine3 || "",
-                              nomineeAddressNearestLandmark: draft.addressNearestLandmark || "",
-                              nomineeAddressCity: draft.addressCity || "",
-                              nomineeAddressState: draft.addressState || "",
-                              nomineeAddressPincode: draft.addressPincode || "",
+                              nomineeAddressLine1: selected.line1 || "",
+                              nomineeAddressLine2: selected.line2 || "",
+                              nomineeAddressLine3: selected.line3 || "",
+                              nomineeAddressNearestLandmark: selected.nearestLandmark || "",
+                              nomineeAddressCity: selected.city || "",
+                              nomineeAddressState: selected.state || "",
+                              nomineeAddressPincode: selected.pincode || "",
                               nomineeAddress: formatNomineeAddressValue({
-                                  line1: draft.addressLine1 || "",
-                                  line2: draft.addressLine2 || "",
-                                  line3: draft.addressLine3 || "",
-                                  nearestLandmark: draft.addressNearestLandmark || "",
-                                  city: draft.addressCity || "",
-                                  state: draft.addressState || "",
-                                  pincode: draft.addressPincode || "",
+                                  line1: selected.line1 || "",
+                                  line2: selected.line2 || "",
+                                  line3: selected.line3 || "",
+                                  nearestLandmark: selected.nearestLandmark || "",
+                                  city: selected.city || "",
+                                  state: selected.state || "",
+                                  pincode: selected.pincode || "",
                               }),
-                          }),
+                              nomineeAddressSource: saveAsPresent ? "communication" : "custom",
+                              nomineeSameAsCommunicationAddress: saveAsPresent,
+                          });
+                      },
                       validate: (draft) => {
                           if (isBlank(draft.relation)) return "Please select a relationship.";
                           if (isBlank(draft.name)) return "Please enter nominee name.";
                           if (isBlank(draft.dob)) return "Please enter nominee date of birth.";
-                          return validateAddressFields({
-                              line1: draft.addressLine1,
-                              line2: draft.addressLine2,
-                              city: draft.addressCity,
-                              state: draft.addressState,
-                              pincode: draft.addressPincode,
-                          });
+                          if (draft.addressSource === "custom") {
+                              return validateAddressFields({
+                                  line1: draft.addressLine1,
+                                  line2: draft.addressLine2,
+                                  city: draft.addressCity,
+                                  state: draft.addressState,
+                                  pincode: draft.addressPincode,
+                              });
+                          }
+                          return null;
                       },
                   },
               ]
