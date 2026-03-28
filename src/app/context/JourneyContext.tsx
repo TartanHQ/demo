@@ -188,6 +188,7 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
     permanentAddressLine1: "123, Green Park",
     permanentAddressLine2: "Block C, New Delhi",
     permanentAddressLine3: "Near City Mall",
+    permanentAddressNearestLandmark: "",
     permanentAddressCity: "New Delhi",
     permanentAddressState: "Delhi",
     permanentAddressPincode: "110016",

@@ -118,6 +118,7 @@ export default function StepReviewApplication() {
         line1?: string;
         line2?: string;
         line3?: string;
+        nearestLandmark?: string;
         city?: string;
         state?: string;
         pincode?: string;
@@ -126,6 +127,7 @@ export default function StepReviewApplication() {
             address.line1,
             address.line2,
             address.line3,
+            address.nearestLandmark,
             address.city,
             address.state,
             address.pincode,
@@ -138,10 +140,12 @@ export default function StepReviewApplication() {
         line1?: string;
         line2?: string;
         line3?: string;
+        nearestLandmark?: string;
         city?: string;
         state?: string;
         pincode?: string;
-    }) => [a.line1, a.line2, a.line3, a.city, a.state, a.pincode].filter(Boolean).join(", ");
+    }) =>
+        [a.line1, a.line2, a.line3, a.nearestLandmark, a.city, a.state, a.pincode].filter(Boolean).join(", ");
 
     const isBlank = (value: any) => !String(value ?? "").trim();
     const validateAddressFields = (draft: Record<string, any>) => {
@@ -152,7 +156,7 @@ export default function StepReviewApplication() {
             isBlank(draft.state) ||
             isBlank(draft.pincode)
         ) {
-            return "Please complete all address fields except Line 3.";
+            return "Please complete all required address fields. Line 3 and nearest landmark are optional.";
         }
         return null;
     };
@@ -509,6 +513,7 @@ export default function StepReviewApplication() {
             line1: formData.communicationAddressLine1 || "",
             line2: formData.communicationAddressLine2 || "",
             line3: formData.communicationAddressLine3 || "",
+            nearestLandmark: formData.communicationAddressNearestLandmark || "",
             city: formData.communicationAddressCity || "",
             state: formData.communicationAddressState || "",
             pincode: formData.communicationAddressPincode || "",
@@ -518,6 +523,7 @@ export default function StepReviewApplication() {
                   line1: personalBaseline.communicationAddressLine1 || "",
                   line2: personalBaseline.communicationAddressLine2 || "",
                   line3: personalBaseline.communicationAddressLine3 || "",
+                  nearestLandmark: personalBaseline.communicationAddressNearestLandmark || "",
                   city: personalBaseline.communicationAddressCity || "",
                   state: personalBaseline.communicationAddressState || "",
                   pincode: personalBaseline.communicationAddressPincode || "",
@@ -531,6 +537,7 @@ export default function StepReviewApplication() {
                       "communicationAddressLine1",
                       "communicationAddressLine2",
                       "communicationAddressLine3",
+                      "communicationAddressNearestLandmark",
                       "communicationAddressCity",
                       "communicationAddressState",
                       "communicationAddressPincode",
@@ -542,6 +549,7 @@ export default function StepReviewApplication() {
                 line1: formData.communicationAddressLine1 || "",
                 line2: formData.communicationAddressLine2 || "",
                 line3: formData.communicationAddressLine3 || "",
+                nearestLandmark: formData.communicationAddressNearestLandmark || "",
                 city: formData.communicationAddressCity || "",
                 state: formData.communicationAddressState || "",
                 pincode: formData.communicationAddressPincode || "",
@@ -554,6 +562,7 @@ export default function StepReviewApplication() {
                     line1: formData.communicationAddressLine1 || "",
                     line2: formData.communicationAddressLine2 || "",
                     line3: formData.communicationAddressLine3 || "",
+                    nearestLandmark: formData.communicationAddressNearestLandmark || "",
                     city: formData.communicationAddressCity || "",
                     state: formData.communicationAddressState || "",
                     pincode: formData.communicationAddressPincode || "",
@@ -583,6 +592,14 @@ export default function StepReviewApplication() {
                                     onChange={(e) => setDraft({ ...draft, line3: e.target.value })}
                                     className="enterprise-input"
                                     placeholder="Line 3"
+                                />
+                            </div>
+                            <div className="md:col-span-2">
+                                <Input
+                                    value={draft.nearestLandmark || ""}
+                                    onChange={(e) => setDraft({ ...draft, nearestLandmark: e.target.value })}
+                                    className="enterprise-input"
+                                    placeholder="Nearest landmark"
                                 />
                             </div>
                             <div>
@@ -618,6 +635,7 @@ export default function StepReviewApplication() {
                         communicationAddressLine1: draft.line1 || "",
                         communicationAddressLine2: draft.line2 || "",
                         communicationAddressLine3: draft.line3 || "",
+                        communicationAddressNearestLandmark: draft.nearestLandmark || "",
                         communicationAddressCity: draft.city || "",
                         communicationAddressState: draft.state || "",
                         communicationAddressPincode: draft.pincode || "",
@@ -625,6 +643,7 @@ export default function StepReviewApplication() {
                             line1: draft.line1 || "",
                             line2: draft.line2 || "",
                             line3: draft.line3 || "",
+                            nearestLandmark: draft.nearestLandmark || "",
                             city: draft.city || "",
                             state: draft.state || "",
                             pincode: draft.pincode || "",
@@ -640,6 +659,7 @@ export default function StepReviewApplication() {
             line1: formData.currentAddress || "",
             line2: "",
             line3: "",
+            nearestLandmark: formData.permanentAddressNearestLandmark || "",
             city: "",
             state: "",
             pincode: "",
@@ -648,6 +668,7 @@ export default function StepReviewApplication() {
             line1: formData.communicationAddressLine1 || "",
             line2: formData.communicationAddressLine2 || "",
             line3: formData.communicationAddressLine3 || "",
+            nearestLandmark: formData.communicationAddressNearestLandmark || "",
             city: formData.communicationAddressCity || "",
             state: formData.communicationAddressState || "",
             pincode: formData.communicationAddressPincode || "",
@@ -664,6 +685,7 @@ export default function StepReviewApplication() {
                     line1: nominee.addressLine1 || "",
                     line2: nominee.addressLine2 || "",
                     line3: nominee.addressLine3 || "",
+                    nearestLandmark: nominee.addressNearestLandmark || "",
                     city: nominee.addressCity || "",
                     state: nominee.addressState || "",
                     pincode: nominee.addressPincode || "",
@@ -680,6 +702,7 @@ export default function StepReviewApplication() {
                         addressLine1: nominee.addressLine1 || "",
                         addressLine2: nominee.addressLine2 || "",
                         addressLine3: nominee.addressLine3 || "",
+                        addressNearestLandmark: nominee.addressNearestLandmark || "",
                         addressCity: nominee.addressCity || "",
                         addressState: nominee.addressState || "",
                         addressPincode: nominee.addressPincode || "",
@@ -694,6 +717,7 @@ export default function StepReviewApplication() {
                                       line1: draft.addressLine1 || "",
                                       line2: draft.addressLine2 || "",
                                       line3: draft.addressLine3 || "",
+                                      nearestLandmark: draft.addressNearestLandmark || "",
                                       city: draft.addressCity || "",
                                       state: draft.addressState || "",
                                       pincode: draft.addressPincode || "",
@@ -779,6 +803,12 @@ export default function StepReviewApplication() {
                                                             : option.value === "communication"
                                                             ? communicationNomineeAddress.line3
                                                             : draft.addressLine3,
+                                                    addressNearestLandmark:
+                                                        option.value === "permanent"
+                                                            ? permanentNomineeAddress.nearestLandmark
+                                                            : option.value === "communication"
+                                                            ? communicationNomineeAddress.nearestLandmark
+                                                            : draft.addressNearestLandmark,
                                                     addressCity:
                                                         option.value === "permanent"
                                                             ? permanentNomineeAddress.city
@@ -834,7 +864,16 @@ export default function StepReviewApplication() {
                                             value={resolvedAddress.line3 || ""}
                                             onChange={(e) => setDraft({ ...draft, addressLine3: e.target.value })}
                                             className="enterprise-input"
-                                            placeholder="Area/Landmark"
+                                            placeholder="Area, colony (optional)"
+                                            disabled={addressDisabled}
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <Input
+                                            value={resolvedAddress.nearestLandmark || ""}
+                                            onChange={(e) => setDraft({ ...draft, addressNearestLandmark: e.target.value })}
+                                            className="enterprise-input"
+                                            placeholder="Nearest landmark"
                                             disabled={addressDisabled}
                                         />
                                     </div>
@@ -879,6 +918,7 @@ export default function StepReviewApplication() {
                                       line1: draft.addressLine1 || "",
                                       line2: draft.addressLine2 || "",
                                       line3: draft.addressLine3 || "",
+                                      nearestLandmark: draft.addressNearestLandmark || "",
                                       city: draft.addressCity || "",
                                       state: draft.addressState || "",
                                       pincode: draft.addressPincode || "",
@@ -893,6 +933,7 @@ export default function StepReviewApplication() {
                                 addressLine1: selectedAddress.line1 || "",
                                 addressLine2: selectedAddress.line2 || "",
                                 addressLine3: selectedAddress.line3 || "",
+                                addressNearestLandmark: selectedAddress.nearestLandmark || "",
                                 addressCity: selectedAddress.city || "",
                                 addressState: selectedAddress.state || "",
                                 addressPincode: selectedAddress.pincode || "",
@@ -908,6 +949,7 @@ export default function StepReviewApplication() {
                             nomineeAddressLine1: primaryNominee?.addressLine1 || "",
                             nomineeAddressLine2: primaryNominee?.addressLine2 || "",
                             nomineeAddressLine3: primaryNominee?.addressLine3 || "",
+                            nomineeAddressNearestLandmark: primaryNominee?.addressNearestLandmark || "",
                             nomineeAddressCity: primaryNominee?.addressCity || "",
                             nomineeAddressState: primaryNominee?.addressState || "",
                             nomineeAddressPincode: primaryNominee?.addressPincode || "",
@@ -915,6 +957,7 @@ export default function StepReviewApplication() {
                                 line1: primaryNominee?.addressLine1,
                                 line2: primaryNominee?.addressLine2,
                                 line3: primaryNominee?.addressLine3,
+                                nearestLandmark: primaryNominee?.addressNearestLandmark,
                                 city: primaryNominee?.addressCity,
                                 state: primaryNominee?.addressState,
                                 pincode: primaryNominee?.addressPincode,
@@ -1124,6 +1167,7 @@ export default function StepReviewApplication() {
                     line1: formData.communicationAddressLine1 || "",
                     line2: formData.communicationAddressLine2 || "",
                     line3: formData.communicationAddressLine3 || "",
+                    nearestLandmark: formData.communicationAddressNearestLandmark || "",
                     city: formData.communicationAddressCity || "",
                     state: formData.communicationAddressState || "",
                     pincode: formData.communicationAddressPincode || "",
@@ -1152,6 +1196,14 @@ export default function StepReviewApplication() {
                                 onChange={(e) => setDraft({ ...draft, line3: e.target.value })}
                                 className="enterprise-input"
                                 placeholder="Line 3"
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <Input
+                                value={draft.nearestLandmark || ""}
+                                onChange={(e) => setDraft({ ...draft, nearestLandmark: e.target.value })}
+                                className="enterprise-input"
+                                placeholder="Nearest landmark"
                             />
                         </div>
                         <div>
@@ -1186,6 +1238,7 @@ export default function StepReviewApplication() {
                         communicationAddressLine1: draft.line1 || "",
                         communicationAddressLine2: draft.line2 || "",
                         communicationAddressLine3: draft.line3 || "",
+                        communicationAddressNearestLandmark: draft.nearestLandmark || "",
                         communicationAddressCity: draft.city || "",
                         communicationAddressState: draft.state || "",
                         communicationAddressPincode: draft.pincode || "",
@@ -1193,6 +1246,7 @@ export default function StepReviewApplication() {
                             line1: draft.line1 || "",
                             line2: draft.line2 || "",
                             line3: draft.line3 || "",
+                            nearestLandmark: draft.nearestLandmark || "",
                             city: draft.city || "",
                             state: draft.state || "",
                             pincode: draft.pincode || "",
@@ -1260,7 +1314,21 @@ export default function StepReviewApplication() {
                   {
                       id: "nominee",
                       label: "Nominee",
-                      value: [formData.nomineeName, formData.nomineeAddress].filter(Boolean).join(" • ") || "—",
+                      value:
+                          [
+                              formData.nomineeName,
+                              formatNomineeAddressValue({
+                                  line1: formData.nomineeAddressLine1,
+                                  line2: formData.nomineeAddressLine2,
+                                  line3: formData.nomineeAddressLine3,
+                                  nearestLandmark: formData.nomineeAddressNearestLandmark,
+                                  city: formData.nomineeAddressCity,
+                                  state: formData.nomineeAddressState,
+                                  pincode: formData.nomineeAddressPincode,
+                              }),
+                          ]
+                              .filter(Boolean)
+                              .join(" • ") || "—",
                       getDraft: () => ({
                           name: formData.nomineeName || "",
                           relation: formData.nomineeRelation || "",
@@ -1268,6 +1336,7 @@ export default function StepReviewApplication() {
                           addressLine1: formData.nomineeAddressLine1 || "",
                           addressLine2: formData.nomineeAddressLine2 || "",
                           addressLine3: formData.nomineeAddressLine3 || "",
+                          addressNearestLandmark: formData.nomineeAddressNearestLandmark || "",
                           addressCity: formData.nomineeAddressCity || "",
                           addressState: formData.nomineeAddressState || "",
                           addressPincode: formData.nomineeAddressPincode || "",
@@ -1324,7 +1393,15 @@ export default function StepReviewApplication() {
                                           value={draft.addressLine3 || ""}
                                           onChange={(e) => setDraft({ ...draft, addressLine3: e.target.value })}
                                           className="enterprise-input"
-                                          placeholder="Area/Landmark"
+                                          placeholder="Area, colony (optional)"
+                                      />
+                                  </div>
+                                  <div className="md:col-span-2">
+                                      <Input
+                                          value={draft.addressNearestLandmark || ""}
+                                          onChange={(e) => setDraft({ ...draft, addressNearestLandmark: e.target.value })}
+                                          className="enterprise-input"
+                                          placeholder="Nearest landmark"
                                       />
                                   </div>
                                   <div>
@@ -1362,6 +1439,7 @@ export default function StepReviewApplication() {
                               nomineeAddressLine1: draft.addressLine1 || "",
                               nomineeAddressLine2: draft.addressLine2 || "",
                               nomineeAddressLine3: draft.addressLine3 || "",
+                              nomineeAddressNearestLandmark: draft.addressNearestLandmark || "",
                               nomineeAddressCity: draft.addressCity || "",
                               nomineeAddressState: draft.addressState || "",
                               nomineeAddressPincode: draft.addressPincode || "",
@@ -1369,6 +1447,7 @@ export default function StepReviewApplication() {
                                   line1: draft.addressLine1 || "",
                                   line2: draft.addressLine2 || "",
                                   line3: draft.addressLine3 || "",
+                                  nearestLandmark: draft.addressNearestLandmark || "",
                                   city: draft.addressCity || "",
                                   state: draft.addressState || "",
                                   pincode: draft.addressPincode || "",

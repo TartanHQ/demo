@@ -13,6 +13,7 @@ type AddressFields = {
   line1: string;
   line2: string;
   line3: string;
+  nearestLandmark: string;
   city: string;
   state: string;
   pincode: string;
@@ -28,6 +29,7 @@ type Nominee = {
   addressLine1: string;
   addressLine2: string;
   addressLine3: string;
+  addressNearestLandmark: string;
   addressCity: string;
   addressState: string;
   addressPincode: string;
@@ -37,6 +39,7 @@ type Nominee = {
   guardianAddressLine1: string;
   guardianAddressLine2: string;
   guardianAddressLine3: string;
+  guardianAddressNearestLandmark: string;
   guardianAddressCity: string;
   guardianAddressState: string;
   guardianAddressPincode: string;
@@ -52,6 +55,7 @@ const createEmptyNominee = (): Nominee => ({
   addressLine1: "",
   addressLine2: "",
   addressLine3: "",
+  addressNearestLandmark: "",
   addressCity: "",
   addressState: "",
   addressPincode: "",
@@ -61,6 +65,7 @@ const createEmptyNominee = (): Nominee => ({
   guardianAddressLine1: "",
   guardianAddressLine2: "",
   guardianAddressLine3: "",
+  guardianAddressNearestLandmark: "",
   guardianAddressCity: "",
   guardianAddressState: "",
   guardianAddressPincode: "",
@@ -135,6 +140,7 @@ const formatAddress = (address: AddressFields) => {
     address.line1,
     address.line2,
     address.line3,
+    address.nearestLandmark,
     address.city,
     address.state,
     address.pincode,
@@ -147,11 +153,20 @@ const formatNomineeAddressDisplay = (n: {
   addressLine1: string;
   addressLine2: string;
   addressLine3: string;
+  addressNearestLandmark: string;
   addressCity: string;
   addressState: string;
   addressPincode: string;
 }) =>
-  [n.addressLine1, n.addressLine2, n.addressLine3, n.addressCity, n.addressState, n.addressPincode]
+  [
+    n.addressLine1,
+    n.addressLine2,
+    n.addressLine3,
+    n.addressNearestLandmark,
+    n.addressCity,
+    n.addressState,
+    n.addressPincode,
+  ]
     .filter(Boolean)
     .join(", ");
 
@@ -159,6 +174,7 @@ const mapAddressFieldsToNominee = (address: AddressFields) => ({
   addressLine1: address.line1,
   addressLine2: address.line2,
   addressLine3: address.line3,
+  addressNearestLandmark: address.nearestLandmark,
   addressCity: address.city,
   addressState: address.state,
   addressPincode: address.pincode,
@@ -194,6 +210,7 @@ export default function StepCombinedDetails() {
     line1: formData.permanentAddressLine1 || formData.currentAddress || "",
     line2: formData.permanentAddressLine2 || "",
     line3: formData.permanentAddressLine3 || "",
+    nearestLandmark: formData.permanentAddressNearestLandmark || "",
     city: formData.permanentAddressCity || "",
     state: formData.permanentAddressState || "",
     pincode: formData.permanentAddressPincode || "",
@@ -202,6 +219,7 @@ export default function StepCombinedDetails() {
     line1: formData.communicationAddressLine1 || formData.communicationAddress || "",
     line2: formData.communicationAddressLine2 || "",
     line3: formData.communicationAddressLine3 || "",
+    nearestLandmark: formData.communicationAddressNearestLandmark || "",
     city: formData.communicationAddressCity || "",
     state: formData.communicationAddressState || "",
     pincode: formData.communicationAddressPincode || "",
@@ -223,6 +241,7 @@ export default function StepCombinedDetails() {
         guardianAddressLine1: nominee.guardianAddressLine1 || nominee.guardianAddress || "",
         guardianAddressLine2: nominee.guardianAddressLine2 || "",
         guardianAddressLine3: nominee.guardianAddressLine3 || "",
+        guardianAddressNearestLandmark: nominee.guardianAddressNearestLandmark || "",
         guardianAddressCity: nominee.guardianAddressCity || "",
         guardianAddressState: nominee.guardianAddressState || "",
         guardianAddressPincode: nominee.guardianAddressPincode || "",
@@ -242,6 +261,7 @@ export default function StepCombinedDetails() {
           addressLine1: formData.nomineeAddressLine1 || formData.nomineeAddress || "",
           addressLine2: formData.nomineeAddressLine2 || "",
           addressLine3: formData.nomineeAddressLine3 || "",
+          addressNearestLandmark: formData.nomineeAddressNearestLandmark || "",
           addressCity: formData.nomineeAddressCity || "",
           addressState: formData.nomineeAddressState || "",
           addressPincode: formData.nomineeAddressPincode || "",
@@ -276,6 +296,7 @@ export default function StepCombinedDetails() {
             line1: permanentAddressText,
             line2: "",
             line3: "",
+            nearestLandmark: "",
             city: "",
             state: "",
             pincode: "",
@@ -432,6 +453,7 @@ export default function StepCombinedDetails() {
       communicationAddressLine1: resolvedCommunicationAddress.line1,
       communicationAddressLine2: resolvedCommunicationAddress.line2,
       communicationAddressLine3: resolvedCommunicationAddress.line3,
+      communicationAddressNearestLandmark: resolvedCommunicationAddress.nearestLandmark,
       communicationAddressCity: resolvedCommunicationAddress.city,
       communicationAddressState: resolvedCommunicationAddress.state,
       communicationAddressPincode: resolvedCommunicationAddress.pincode,
@@ -502,6 +524,7 @@ export default function StepCombinedDetails() {
       communicationAddressLine1: resolvedCommunicationAddress.line1,
       communicationAddressLine2: resolvedCommunicationAddress.line2,
       communicationAddressLine3: resolvedCommunicationAddress.line3,
+      communicationAddressNearestLandmark: resolvedCommunicationAddress.nearestLandmark,
       communicationAddressCity: resolvedCommunicationAddress.city,
       communicationAddressState: resolvedCommunicationAddress.state,
       communicationAddressPincode: resolvedCommunicationAddress.pincode,
@@ -518,6 +541,7 @@ export default function StepCombinedDetails() {
       nomineeAddressLine1: primaryNominee?.addressLine1 || "",
       nomineeAddressLine2: primaryNominee?.addressLine2 || "",
       nomineeAddressLine3: primaryNominee?.addressLine3 || "",
+      nomineeAddressNearestLandmark: primaryNominee?.addressNearestLandmark || "",
       nomineeAddressCity: primaryNominee?.addressCity || "",
       nomineeAddressState: primaryNominee?.addressState || "",
       nomineeAddressPincode: primaryNominee?.addressPincode || "",
@@ -531,9 +555,12 @@ export default function StepCombinedDetails() {
       nextData.permanentAddressLine1 = permanentAddress.line1;
       nextData.permanentAddressLine2 = permanentAddress.line2;
       nextData.permanentAddressLine3 = permanentAddress.line3;
+      nextData.permanentAddressNearestLandmark = permanentAddress.nearestLandmark;
       nextData.permanentAddressCity = permanentAddress.city;
       nextData.permanentAddressState = permanentAddress.state;
       nextData.permanentAddressPincode = permanentAddress.pincode;
+    } else {
+      nextData.permanentAddressNearestLandmark = "";
     }
     updateFormData(nextData);
     setNomineeEnabled(wantsNominee === true);
@@ -932,7 +959,16 @@ export default function StepCombinedDetails() {
                   value={permanentAddress.line3}
                   onChange={(e) => setPermanentAddress((prev) => ({ ...prev, line3: e.target.value }))}
                   className="enterprise-input"
-                  placeholder="Area/Landmark"
+                  placeholder="Area, colony (optional)"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="form-label">Nearest landmark</label>
+                <Input
+                  value={permanentAddress.nearestLandmark}
+                  onChange={(e) => setPermanentAddress((prev) => ({ ...prev, nearestLandmark: e.target.value }))}
+                  className="enterprise-input"
+                  placeholder="e.g. Near metro station, temple"
                 />
               </div>
               <div>
@@ -1023,7 +1059,16 @@ export default function StepCombinedDetails() {
                     value={communicationAddress.line3}
                     onChange={(e) => setCommunicationAddress((prev) => ({ ...prev, line3: e.target.value }))}
                     className="enterprise-input"
-                    placeholder="Area/Landmark"
+                    placeholder="Area, colony (optional)"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="form-label">Nearest landmark</label>
+                  <Input
+                    value={communicationAddress.nearestLandmark}
+                    onChange={(e) => setCommunicationAddress((prev) => ({ ...prev, nearestLandmark: e.target.value }))}
+                    className="enterprise-input"
+                    placeholder="e.g. Near metro station, temple"
                   />
                 </div>
                 <div>
@@ -1369,7 +1414,22 @@ export default function StepCombinedDetails() {
                                 )
                               }
                               className="enterprise-input"
-                              placeholder="Area/Landmark"
+                              placeholder="Area, colony (optional)"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="form-label">Nearest landmark</label>
+                            <Input
+                              value={nominee.guardianAddressNearestLandmark}
+                              onChange={(e) =>
+                                setNominees((prev) =>
+                                  prev.map((item, idx) =>
+                                    idx === index ? { ...item, guardianAddressNearestLandmark: e.target.value } : item
+                                  )
+                                )
+                              }
+                              className="enterprise-input"
+                              placeholder="e.g. Near metro station, temple"
                             />
                           </div>
                           <div>
@@ -1516,7 +1576,23 @@ export default function StepCombinedDetails() {
                           )
                         }
                         className="enterprise-input"
-                        placeholder="Area/Landmark"
+                        placeholder="Area, colony (optional)"
+                        disabled={addressDisabled}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="form-label">Nearest landmark</label>
+                      <Input
+                        value={nominee.addressNearestLandmark}
+                        onChange={(e) =>
+                          setNominees((prev) =>
+                            prev.map((item, idx) =>
+                              idx === index ? { ...item, addressNearestLandmark: e.target.value } : item
+                            )
+                          )
+                        }
+                        className="enterprise-input"
+                        placeholder="e.g. Near metro station, temple"
                         disabled={addressDisabled}
                       />
                     </div>
