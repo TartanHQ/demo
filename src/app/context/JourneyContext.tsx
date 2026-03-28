@@ -70,6 +70,7 @@ const getInitialStepsForJourney = (journeyType: JourneyType): Step[] => {
         makeJourneyStepId("ntb", "kycChoice"),
         makeJourneyStepId("ntb", "ekycHandler"),
         makeJourneyStepId("ntb", "profileDetails"),
+        makeJourneyStepId("ntb", "incomeAndNominee"),
         makeJourneyStepId("ntb", "reviewApplication"),
         makeJourneyStepId("ntb", "videoKyc"),
         makeJourneyStepId("ntb", "complete"),
@@ -80,6 +81,7 @@ const getInitialStepsForJourney = (journeyType: JourneyType): Step[] => {
         makeJourneyStepId("ntb-conversion", "welcome"),
         makeJourneyStepId("ntb-conversion", "kycChoice"),
         makeJourneyStepId("ntb-conversion", "profileDetails"),
+        makeJourneyStepId("ntb-conversion", "incomeAndNominee"),
         makeJourneyStepId("ntb-conversion", "reviewApplication"),
         makeJourneyStepId("ntb-conversion", "complete"),
       ];
@@ -435,8 +437,10 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
             (s) =>
               s?.id !== "kycDetails" &&
               s?.id !== "nomineeDetails" &&
+              s?.id !== "incomeDetails" &&
               !String(s?.id || "").endsWith(":kycDetails") &&
-              !String(s?.id || "").endsWith(":nomineeDetails")
+              !String(s?.id || "").endsWith(":nomineeDetails") &&
+              !String(s?.id || "").endsWith(":incomeDetails")
           );
           const parsedIndex = parseInt(savedStepIndex, 10);
 
@@ -466,6 +470,17 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
               const hasBase = (baseId: string) =>
                 parsedSteps.some((step) => step?.id === baseId || String(step?.id || "").endsWith(`:${baseId}`));
               const needsUpgrade = !hasBase("etbIncomeDeclarations");
+              if (needsUpgrade) {
+                const currentId = parsedSteps[parsedIndex]?.id;
+                upgradedIndex = currentId ? upgraded.findIndex((step) => step.id === currentId) : -1;
+                parsedSteps = upgraded;
+              }
+            }
+            if (savedJourneyType === "ntb" || savedJourneyType === "ntb-conversion") {
+              const upgraded = getInitialStepsForJourney(savedJourneyType);
+              const hasBase = (baseId: string) =>
+                parsedSteps.some((step) => step?.id === baseId || String(step?.id || "").endsWith(`:${baseId}`));
+              const needsUpgrade = !hasBase("incomeAndNominee");
               if (needsUpgrade) {
                 const currentId = parsedSteps[parsedIndex]?.id;
                 upgradedIndex = currentId ? upgraded.findIndex((step) => step.id === currentId) : -1;

@@ -5,89 +5,12 @@ import { useJourney } from "@/app/context/JourneyContext";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, DollarSign, Loader2, Mail, MapPin, ShieldCheck, User, UserPlus, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, Loader2, Mail, MapPin, ShieldCheck, User } from "lucide-react";
 import StepCard from "@/app/components/layout/StepCard";
 import { Checkbox } from "@/components/ui/checkbox";
-
-type AddressFields = {
-  line1: string;
-  line2: string;
-  line3: string;
-  nearestLandmark: string;
-  city: string;
-  state: string;
-  pincode: string;
-};
-
-type NomineeAddressSource = "none" | "communication" | "permanent" | "custom";
-
-type Nominee = {
-  name: string;
-  nameLocked: boolean;
-  relation: string;
-  dob: string;
-  addressLine1: string;
-  addressLine2: string;
-  addressLine3: string;
-  addressNearestLandmark: string;
-  addressCity: string;
-  addressState: string;
-  addressPincode: string;
-  addressSource: NomineeAddressSource;
-  guardianFullName: string;
-  guardianDob: string;
-  guardianAddressLine1: string;
-  guardianAddressLine2: string;
-  guardianAddressLine3: string;
-  guardianAddressNearestLandmark: string;
-  guardianAddressCity: string;
-  guardianAddressState: string;
-  guardianAddressPincode: string;
-};
+import { type AddressFields, formatAddress, getCityStateForPincode } from "@/app/components/steps/personalDetailsNomineeShared";
 
 const COUNTRY_OF_BIRTH_DEFAULT = "India";
-
-const createEmptyNominee = (): Nominee => ({
-  name: "",
-  nameLocked: false,
-  relation: "",
-  dob: "",
-  addressLine1: "",
-  addressLine2: "",
-  addressLine3: "",
-  addressNearestLandmark: "",
-  addressCity: "",
-  addressState: "",
-  addressPincode: "",
-  addressSource: "communication",
-  guardianFullName: "",
-  guardianDob: "",
-  guardianAddressLine1: "",
-  guardianAddressLine2: "",
-  guardianAddressLine3: "",
-  guardianAddressNearestLandmark: "",
-  guardianAddressCity: "",
-  guardianAddressState: "",
-  guardianAddressPincode: "",
-});
-
-const PINCODE_LOOKUP: Record<string, { city: string; state: string }> = {
-  "560102": { city: "Bengaluru", state: "Karnataka" },
-  "122003": { city: "Gurugram", state: "Haryana" },
-  "122002": { city: "Gurugram", state: "Haryana" },
-  "122001": { city: "Gurugram", state: "Haryana" },
-  "400069": { city: "Mumbai", state: "Maharashtra" },
-  "500084": { city: "Hyderabad", state: "Telangana" },
-  "411014": { city: "Pune", state: "Maharashtra" },
-  "560038": { city: "Bengaluru", state: "Karnataka" },
-  "700091": { city: "Kolkata", state: "West Bengal" },
-};
-
-const getCityStateForPincode = (pincode: string) => {
-  const normalized = pincode.trim();
-  if (normalized.length !== 6) return null;
-  return PINCODE_LOOKUP[normalized] || null;
-};
 
 const BIRTH_STATE_OPTIONS: string[] = [
   "Andhra Pradesh",
@@ -135,69 +58,8 @@ const RESIDENCE_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "company_provided", label: "Company Provided" },
 ];
 
-const formatAddress = (address: AddressFields) => {
-  return [
-    address.line1,
-    address.line2,
-    address.line3,
-    address.nearestLandmark,
-    address.city,
-    address.state,
-    address.pincode,
-  ]
-    .filter(Boolean)
-    .join(", ");
-};
-
-const formatNomineeAddressDisplay = (n: {
-  addressLine1: string;
-  addressLine2: string;
-  addressLine3: string;
-  addressNearestLandmark: string;
-  addressCity: string;
-  addressState: string;
-  addressPincode: string;
-}) =>
-  [
-    n.addressLine1,
-    n.addressLine2,
-    n.addressLine3,
-    n.addressNearestLandmark,
-    n.addressCity,
-    n.addressState,
-    n.addressPincode,
-  ]
-    .filter(Boolean)
-    .join(", ");
-
-const mapAddressFieldsToNominee = (address: AddressFields) => ({
-  addressLine1: address.line1,
-  addressLine2: address.line2,
-  addressLine3: address.line3,
-  addressNearestLandmark: address.nearestLandmark,
-  addressCity: address.city,
-  addressState: address.state,
-  addressPincode: address.pincode,
-});
-
-function normalizeNomineeAddressSource(
-  raw: NomineeAddressSource | undefined,
-  sameAsPermanent: boolean
-): NomineeAddressSource {
-  if (raw === "permanent") {
-    return sameAsPermanent ? "communication" : "custom";
-  }
-  if (raw === "none") {
-    return "communication";
-  }
-  if (raw === "communication" || raw === "custom") {
-    return raw;
-  }
-  return "communication";
-}
-
 export default function StepCombinedDetails() {
-  const { nextStep, formData, updateFormData, setNomineeEnabled, setBottomBarContent, journeySteps, currentStepIndex, journeyType } =
+  const { nextStep, formData, updateFormData, setBottomBarContent, journeySteps, currentStepIndex, journeyType } =
     useJourney();
   const isNtb = journeyType === "ntb" || journeyType === "ntb-conversion";
   const isNtbConversion = journeyType === "ntb-conversion";
@@ -215,7 +77,6 @@ export default function StepCombinedDetails() {
   const [stateOfBirth, setStateOfBirth] = useState(formData.stateOfBirth || "");
   const [cityOfBirth, setCityOfBirth] = useState(formData.cityOfBirth || "");
   const [typeOfResidence, setTypeOfResidence] = useState(formData.typeOfResidence || "");
-  const [incomeRange, setIncomeRange] = useState(formData.incomeRange || "");
   const [isPep, setIsPep] = useState<boolean>(!!formData.isPep);
   const [isIndianNational, setIsIndianNational] = useState<boolean>(formData.isIndianNational !== false);
   const [isTaxResidentIndiaOnly, setIsTaxResidentIndiaOnly] = useState<boolean>(formData.isTaxResidentIndiaOnly !== false);
@@ -244,67 +105,6 @@ export default function StepCombinedDetails() {
     formData.sameAsPermanentAddress ?? formData.sameAsCurrentAddress ?? true
   );
 
-  const [wantsNominee, setWantsNominee] = useState<boolean | null>(
-    formData.wantsNominee === undefined ? null : !!formData.wantsNominee
-  );
-
-  const [nominees, setNominees] = useState<Nominee[]>(() => {
-    if (Array.isArray(formData.nominees) && formData.nominees.length > 0) {
-      return formData.nominees.map((nominee: any) => ({
-        ...createEmptyNominee(),
-        ...nominee,
-        nameLocked: !!nominee?.name,
-        guardianAddressLine1: nominee.guardianAddressLine1 || nominee.guardianAddress || "",
-        guardianAddressLine2: nominee.guardianAddressLine2 || "",
-        guardianAddressLine3: nominee.guardianAddressLine3 || "",
-        guardianAddressNearestLandmark: nominee.guardianAddressNearestLandmark || "",
-        guardianAddressCity: nominee.guardianAddressCity || "",
-        guardianAddressState: nominee.guardianAddressState || "",
-        guardianAddressPincode: nominee.guardianAddressPincode || "",
-        addressSource: normalizeNomineeAddressSource(
-          nominee.addressSource ||
-            (nominee.sameAsCommunicationAddress ? "communication" : undefined),
-          formData.sameAsPermanentAddress !== false
-        ),
-      }));
-    }
-    if (formData.nomineeName || formData.nomineeRelation || formData.nomineeDob || formData.nomineeAddress) {
-        return [
-        {
-          ...createEmptyNominee(),
-          name: formData.nomineeName || "",
-            nameLocked: !!formData.nomineeName,
-          relation: formData.nomineeRelation || "",
-          dob: formData.nomineeDob || "",
-          addressLine1: formData.nomineeAddressLine1 || formData.nomineeAddress || "",
-          addressLine2: formData.nomineeAddressLine2 || "",
-          addressLine3: formData.nomineeAddressLine3 || "",
-          addressNearestLandmark: formData.nomineeAddressNearestLandmark || "",
-          addressCity: formData.nomineeAddressCity || "",
-          addressState: formData.nomineeAddressState || "",
-          addressPincode: formData.nomineeAddressPincode || "",
-          addressSource: normalizeNomineeAddressSource(
-            formData.nomineeAddressSource ||
-              (formData.nomineeSameAsCommunicationAddress ? "communication" : undefined),
-            formData.sameAsPermanentAddress !== false
-          ),
-        },
-      ];
-    }
-    return [createEmptyNominee()];
-  });
-
-  const incomeRanges = useMemo(
-    () => [
-      { value: "0-5L", label: "Up to ₹5L" },
-      { value: "5-10L", label: "₹5L – ₹10L" },
-      { value: "10-15L", label: "₹10L – ₹15L" },
-      { value: "15-25L", label: "₹15L – ₹25L" },
-      { value: "25L+", label: "₹25L+" },
-    ],
-    []
-  );
-
   const permanentAddressText = useMemo(
     () => formData.currentAddress || formatAddress(permanentAddress),
     [formData.currentAddress, permanentAddress]
@@ -326,22 +126,6 @@ export default function StepCombinedDetails() {
     [isNtb, permanentAddress, permanentAddressText]
   );
 
-  const permanentAddressForNominee = useMemo(
-    () => (isNtb ? mapAddressFieldsToNominee(permanentAddressFieldsForComm) : mapAddressFieldsToNominee(permanentAddress)),
-    [isNtb, permanentAddress, permanentAddressFieldsForComm]
-  );
-
-  const communicationAddressForNominee = useMemo(
-    () =>
-      sameAsPermanentAddress
-        ? permanentAddressForNominee
-        : mapAddressFieldsToNominee(communicationAddress),
-    [sameAsPermanentAddress, permanentAddressForNominee, communicationAddress]
-  );
-
-  /** NTB + comm same as permanent → present address is single Aadhaar-style line (like Permanent Address block). */
-  const presentAddressIsAadhaarStyle = isNtb && sameAsPermanentAddress;
-
   useEffect(() => {
     if (!sameAsPermanentAddress) return;
     if (isNtb) {
@@ -351,81 +135,12 @@ export default function StepCombinedDetails() {
     }
   }, [sameAsPermanentAddress, permanentAddress, isNtb, permanentAddressFieldsForComm]);
 
-  useEffect(() => {
-    if (!wantsNominee) return;
-    setNominees((prev) =>
-      prev.map((nominee) => {
-        if (nominee.addressSource === "communication") {
-          return { ...nominee, ...communicationAddressForNominee };
-        }
-        if (nominee.addressSource === "permanent" && !sameAsPermanentAddress) {
-          return { ...nominee, ...permanentAddressForNominee };
-        }
-        if (nominee.addressSource === "permanent" && sameAsPermanentAddress) {
-          return { ...nominee, addressSource: "communication", ...communicationAddressForNominee };
-        }
-        return nominee;
-      })
-    );
-  }, [communicationAddressForNominee, permanentAddressForNominee, sameAsPermanentAddress, wantsNominee]);
-
-  useEffect(() => {
-    if (wantsNominee === true && nominees.length === 0) {
-      setNominees([createEmptyNominee()]);
-    }
-  }, [wantsNominee, nominees.length]);
-
   const isAddressComplete = (address: AddressFields) =>
     !!address.line1 &&
     !!address.line2 &&
     !!address.city &&
     !!address.state &&
     !!address.pincode;
-
-  const isNomineeAddressComplete = (nominee: Nominee) =>
-    !!nominee.addressLine1 &&
-    !!nominee.addressLine2 &&
-    !!nominee.addressCity &&
-    !!nominee.addressState &&
-    !!nominee.addressPincode;
-
-  const isGuardianAddressComplete = (nominee: Nominee) =>
-    !!nominee.guardianAddressLine1?.trim() &&
-    !!nominee.guardianAddressLine2?.trim() &&
-    !!nominee.guardianAddressCity?.trim() &&
-    !!nominee.guardianAddressState?.trim() &&
-    !!nominee.guardianAddressPincode?.trim();
-
-  const getAgeInYears = (dob: string) => {
-    if (!dob) return null;
-    const d = new Date(dob);
-    if (Number.isNaN(d.getTime())) return null;
-    const now = new Date();
-    let age = now.getFullYear() - d.getFullYear();
-    const monthDiff = now.getMonth() - d.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < d.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  const isMinorNominee = (dob: string) => {
-    const age = getAgeInYears(dob);
-    return age !== null && age < 18;
-  };
-
-  const isGuardianComplete = (nominee: Nominee) =>
-    !!nominee.guardianFullName?.trim() &&
-    !!nominee.guardianDob &&
-    isGuardianAddressComplete(nominee);
-
-  const isNomineeComplete = (nominee: Nominee) =>
-    nominee.addressSource !== "none" &&
-    !!nominee.name &&
-    !!nominee.relation &&
-    !!nominee.dob &&
-    (nominee.addressSource !== "custom" || isNomineeAddressComplete(nominee)) &&
-    (!isMinorNominee(nominee.dob) || isGuardianComplete(nominee));
 
   const displayEmail = useMemo(
     () => (usesPrimaryEmailForComms === false && communicationEmail ? communicationEmail : email),
@@ -443,25 +158,13 @@ export default function StepCombinedDetails() {
     (!isNtb || !!stateOfBirth) &&
     (!isNtb || !!cityOfBirth) &&
     (!isNtb || !!typeOfResidence) &&
-    incomeRange &&
     usesPrimaryEmailForComms !== null &&
     (usesPrimaryEmailForComms || !!communicationEmail) &&
     isPermanentAddressValid &&
-    (sameAsPermanentAddress || isAddressComplete(communicationAddress)) &&
-    wantsNominee !== null &&
-    (!wantsNominee || (nominees.length > 0 && nominees.every(isNomineeComplete)));
+    (sameAsPermanentAddress || isAddressComplete(communicationAddress));
 
   const buildPersonalDetailsBaseline = useCallback(() => {
     const resolvedCommunicationAddress = sameAsPermanentAddress ? permanentAddressFieldsForComm : communicationAddress;
-    const resolvedNominees = wantsNominee
-      ? nominees.map((nominee) =>
-          nominee.addressSource === "communication"
-            ? { ...nominee, ...communicationAddressForNominee }
-            : nominee.addressSource === "permanent"
-            ? { ...nominee, ...permanentAddressForNominee }
-            : nominee
-        )
-      : [];
 
     return {
       usesPrimaryEmailForComms,
@@ -474,7 +177,6 @@ export default function StepCombinedDetails() {
       stateOfBirth,
       cityOfBirth,
       typeOfResidence,
-      incomeRange,
       sameAsPermanentAddress,
       currentAddress: permanentAddressText,
       communicationAddressLine1: resolvedCommunicationAddress.line1,
@@ -484,34 +186,27 @@ export default function StepCombinedDetails() {
       communicationAddressCity: resolvedCommunicationAddress.city,
       communicationAddressState: resolvedCommunicationAddress.state,
       communicationAddressPincode: resolvedCommunicationAddress.pincode,
-      wantsNominee: wantsNominee === true,
-      nominees: resolvedNominees,
       isPep,
       isIndianNational,
       isTaxResidentIndiaOnly,
     };
   }, [
     communicationAddress,
-    communicationAddressForNominee,
     communicationEmail,
     fatherName,
-    incomeRange,
     isIndianNational,
     isPep,
     isTaxResidentIndiaOnly,
     spouseName,
     maritalStatus,
     motherName,
-    nominees,
     permanentAddressFieldsForComm,
-    permanentAddressForNominee,
     permanentAddressText,
     sameAsPermanentAddress,
     stateOfBirth,
     cityOfBirth,
     typeOfResidence,
     usesPrimaryEmailForComms,
-    wantsNominee,
   ]);
 
   useEffect(() => {
@@ -525,16 +220,6 @@ export default function StepCombinedDetails() {
 
     setIsLoading(true);
     const resolvedCommunicationAddress = sameAsPermanentAddress ? permanentAddressFieldsForComm : communicationAddress;
-    const resolvedNominees = wantsNominee
-      ? nominees.map((nominee) =>
-          nominee.addressSource === "communication"
-            ? { ...nominee, ...communicationAddressForNominee }
-            : nominee.addressSource === "permanent"
-            ? { ...nominee, ...permanentAddressForNominee }
-            : nominee
-        )
-      : [];
-    const primaryNominee = resolvedNominees[0];
     const nextData: Record<string, any> = {
       email: displayEmail,
       usesPrimaryEmailForComms,
@@ -547,7 +232,6 @@ export default function StepCombinedDetails() {
       stateOfBirth,
       cityOfBirth,
       typeOfResidence,
-      incomeRange,
       communicationAddressLine1: resolvedCommunicationAddress.line1,
       communicationAddressLine2: resolvedCommunicationAddress.line2,
       communicationAddressLine3: resolvedCommunicationAddress.line3,
@@ -559,21 +243,6 @@ export default function StepCombinedDetails() {
       sameAsCurrentAddress: sameAsPermanentAddress,
       currentAddress: permanentAddressText,
       communicationAddress: formatAddress(resolvedCommunicationAddress),
-      wantsNominee: wantsNominee === true,
-      nominees: resolvedNominees,
-      nomineeName: primaryNominee?.name || "",
-      nomineeRelation: primaryNominee?.relation || "",
-      nomineeDob: primaryNominee?.dob || "",
-      nomineeAddress: primaryNominee ? formatNomineeAddressDisplay(primaryNominee) : "",
-      nomineeAddressLine1: primaryNominee?.addressLine1 || "",
-      nomineeAddressLine2: primaryNominee?.addressLine2 || "",
-      nomineeAddressLine3: primaryNominee?.addressLine3 || "",
-      nomineeAddressNearestLandmark: primaryNominee?.addressNearestLandmark || "",
-      nomineeAddressCity: primaryNominee?.addressCity || "",
-      nomineeAddressState: primaryNominee?.addressState || "",
-      nomineeAddressPincode: primaryNominee?.addressPincode || "",
-      nomineeSameAsCommunicationAddress: primaryNominee?.addressSource === "communication",
-      nomineeAddressSource: primaryNominee?.addressSource || "custom",
       isPep,
       isIndianNational,
       isTaxResidentIndiaOnly,
@@ -590,19 +259,16 @@ export default function StepCombinedDetails() {
       nextData.permanentAddressNearestLandmark = "";
     }
     updateFormData(nextData);
-    setNomineeEnabled(wantsNominee === true);
     setTimeout(() => {
       setIsLoading(false);
       nextStep();
     }, 1000);
   }, [
     communicationAddress,
-    communicationAddressForNominee,
     communicationEmail,
     displayEmail,
     email,
     fatherName,
-    incomeRange,
     isFormValid,
     isIndianNational,
     isPep,
@@ -611,19 +277,15 @@ export default function StepCombinedDetails() {
     maritalStatus,
     motherName,
     nextStep,
-    nominees,
     permanentAddress,
     permanentAddressFieldsForComm,
-    permanentAddressForNominee,
     permanentAddressText,
     sameAsPermanentAddress,
     stateOfBirth,
     cityOfBirth,
     typeOfResidence,
-    setNomineeEnabled,
     updateFormData,
     usesPrimaryEmailForComms,
-    wantsNominee,
     isNtb,
   ]);
 
@@ -641,17 +303,12 @@ export default function StepCombinedDetails() {
           ) : (
             <span className="flex items-center justify-center gap-2">
               <span>Continue</span>
-              {wantsNominee && (
-                <span className="inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-extrabold tracking-wide">
-                  Nominee Added
-                </span>
-              )}
             </span>
           )}
         </Button>
       </div>
     );
-  }, [handleContinue, isLoading, isFormValid, setBottomBarContent, wantsNominee]);
+  }, [handleContinue, isLoading, isFormValid, setBottomBarContent]);
 
   return (
     <StepCard
@@ -674,9 +331,9 @@ export default function StepCombinedDetails() {
         }}
         className="space-y-6"
       >
-        {/* Contact & Family */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
+        {/* Contact & Family — from ~360px: row1 Marital|Spouse, row2 Father|Mother; md preserves email|marital column + father|mother */}
+        <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-2 gap-5">
+          <div className="min-[360px]:col-span-2 min-[360px]:row-start-1 md:col-span-1 md:row-start-1 md:col-start-1">
             <label className="form-label flex items-center gap-2">
               <Mail className="w-4 h-4 text-slate-400" />
               Email Address *
@@ -745,46 +402,48 @@ export default function StepCombinedDetails() {
             </div>
           </div>
 
-          <div>
-            <label className="form-label flex items-center gap-2">
-              <User className="w-4 h-4 text-slate-400" />
-              Marital Status *
-            </label>
-            <Select
-              value={maritalStatus}
-              onValueChange={(val) => {
-                if (isNtbConversion) return;
-                setMaritalStatus(val);
-              }}
-              disabled={isNtbConversion}
-            >
-              <SelectTrigger
-                className={`enterprise-input flex items-center justify-between ${showErrors && !maritalStatus ? "error" : ""} ${
-                  isNtbConversion ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
-                }`}
+          <div className="min-[360px]:contents md:!flex md:flex-col md:gap-4 md:col-start-2 md:row-start-1">
+            <div className="min-[360px]:col-start-1 min-[360px]:row-start-2 md:col-start-auto md:row-start-auto">
+              <label className="form-label flex items-center gap-2">
+                <User className="w-4 h-4 text-slate-400" />
+                Marital Status *
+              </label>
+              <Select
+                value={maritalStatus}
+                onValueChange={(val) => {
+                  if (isNtbConversion) return;
+                  setMaritalStatus(val);
+                }}
+                disabled={isNtbConversion}
               >
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                <SelectItem value="single" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                  Single
-                </SelectItem>
-                <SelectItem value="married" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                  Married
-                </SelectItem>
-                <SelectItem value="other" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
-                  Other
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            {showErrors && !maritalStatus && (
-              <p className="error-text">
-                <AlertCircle className="w-4 h-4" />
-                Please select your marital status.
-              </p>
-            )}
+                <SelectTrigger
+                  className={`enterprise-input flex items-center justify-between ${showErrors && !maritalStatus ? "error" : ""} ${
+                    isNtbConversion ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+                  }`}
+                >
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+                  <SelectItem value="single" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                    Single
+                  </SelectItem>
+                  <SelectItem value="married" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                    Married
+                  </SelectItem>
+                  <SelectItem value="other" className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3">
+                    Other
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {showErrors && !maritalStatus && (
+                <p className="error-text">
+                  <AlertCircle className="w-4 h-4" />
+                  Please select your marital status.
+                </p>
+              )}
+            </div>
             {isNtb && maritalStatus === "married" && (
-              <div className="mt-4">
+              <div className="min-[360px]:col-start-2 min-[360px]:row-start-2 md:col-start-auto md:row-start-auto md:w-full">
                 <label className="form-label flex items-center gap-2">
                   <User className="w-4 h-4 text-slate-400" />
                   Spouse Name *
@@ -805,7 +464,13 @@ export default function StepCombinedDetails() {
             )}
           </div>
 
-          <div>
+          <div
+            className={
+              isNtb && maritalStatus === "married"
+                ? "min-[360px]:col-start-1 min-[360px]:row-start-3 md:col-start-1 md:row-start-2 md:col-span-1"
+                : "min-[360px]:col-start-2 min-[360px]:row-start-2 md:col-start-1 md:row-start-2 md:col-span-1"
+            }
+          >
             <label className="form-label flex items-center gap-2">
               <User className="w-4 h-4 text-slate-400" />
               Father’s Name *
@@ -826,7 +491,13 @@ export default function StepCombinedDetails() {
             )}
           </div>
 
-          <div>
+          <div
+            className={
+              isNtb && maritalStatus === "married"
+                ? "min-[360px]:col-start-2 min-[360px]:row-start-3 md:col-start-2 md:row-start-2 md:col-span-1"
+                : "min-[360px]:col-span-2 min-[360px]:row-start-3 md:col-start-2 md:row-start-2 md:col-span-1"
+            }
+          >
             <label className="form-label flex items-center gap-2">
               <User className="w-4 h-4 text-slate-400" />
               Mother’s Name *
@@ -1145,575 +816,6 @@ export default function StepCombinedDetails() {
           )}
         </div>
 
-        {/* Income + Nominee */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label className="form-label flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-slate-400" />
-              Annual Income Range *
-            </label>
-            <Select value={incomeRange} onValueChange={setIncomeRange}>
-              <SelectTrigger className={`enterprise-input flex items-center justify-between ${showErrors && !incomeRange ? "error" : ""}`}>
-                <SelectValue placeholder="Select income range" />
-              </SelectTrigger>
-              <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                {incomeRanges.map((r) => (
-                  <SelectItem
-                    key={r.value}
-                    value={r.value}
-                    className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
-                  >
-                    {r.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {showErrors && !incomeRange && (
-              <p className="error-text">
-                <AlertCircle className="w-4 h-4" />
-                Please select an income range.
-              </p>
-            )}
-          </div>
-
-          <div className="rounded-[var(--radius-lg)] border border-gray-200 bg-white p-4 md:p-5 space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900">
-                  Do you want to add a nominee? *
-                </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  If yes, add nominee details. You can add up to 4 nominees.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setWantsNominee(true)}
-                  className={[
-                    "h-9 px-4 rounded-[999px] text-xs font-semibold border transition-colors",
-                    wantsNominee === true
-                      ? "bg-slate-900 text-white border-slate-900"
-                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
-                  ].join(" ")}
-                >
-                  Yes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setWantsNominee(false)}
-                  className={[
-                    "h-9 px-4 rounded-[999px] text-xs font-semibold border transition-colors",
-                    wantsNominee === false
-                      ? "bg-slate-900 text-white border-slate-900"
-                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
-                  ].join(" ")}
-                >
-                  No
-                </button>
-              </div>
-            </div>
-            {showErrors && wantsNominee === null && (
-              <p className="error-text">
-                <AlertCircle className="w-4 h-4" />
-                Please choose whether to add a nominee.
-              </p>
-            )}
-          </div>
-            </div>
-
-            {wantsNominee && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-slate-400" />
-                Nominee Details
-              </p>
-              {nominees.length < 4 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setNominees((prev) => [...prev, createEmptyNominee()])}
-                  className="h-8 px-3 text-xs font-semibold"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add nominee
-                </Button>
-              )}
-            </div>
-
-            {nominees.map((nominee, index) => {
-              const nomineeErrors = showErrors && !isNomineeComplete(nominee);
-              const livesAtSameAddress =
-                nominee.addressSource === "communication" ||
-                (nominee.addressSource === "permanent" && sameAsPermanentAddress);
-              const addressReadOnly = livesAtSameAddress;
-              const readOnlyAddressClass =
-                "bg-gray-100 text-gray-500 cursor-not-allowed";
-              const nomineeIsMinor = isMinorNominee(nominee.dob);
-
-              return (
-                <div key={`nominee-${index}`} className="rounded-[var(--radius-lg)] border border-gray-200 bg-white p-4 md:p-5 space-y-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-gray-900">Nominee {index + 1}</p>
-                    {nominees.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setNominees((prev) => prev.filter((_, i) => i !== index))}
-                        className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Remove
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="form-label">Relationship *</label>
-                      <Select
-                        value={nominee.relation}
-                        onValueChange={(val) =>
-                          setNominees((prev) =>
-                            prev.map((item, idx) => {
-                              if (idx !== index) return item;
-                              const next = { ...item, relation: val };
-                              if (val === "father") {
-                                next.name = fatherName;
-                                next.nameLocked = true;
-                                return next;
-                              }
-                              if (val === "mother") {
-                                next.name = motherName;
-                                next.nameLocked = true;
-                                return next;
-                              }
-                              next.name = "";
-                              next.nameLocked = false;
-                              return next;
-                            })
-                          )
-                        }
-                      >
-                        <SelectTrigger className={`enterprise-input flex items-center justify-between ${showErrors && !nominee.relation ? "error" : ""}`}>
-                          <SelectValue placeholder="Select relationship" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
-                          {[
-                            { value: "spouse", label: "Spouse" },
-                            { value: "father", label: "Father" },
-                            { value: "mother", label: "Mother" },
-                            { value: "son", label: "Son" },
-                            { value: "daughter", label: "Daughter" },
-                          ].map((o) => (
-                            <SelectItem
-                              key={o.value}
-                              value={o.value}
-                              className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
-                            >
-                              {o.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="form-label">Nominee’s Full Name *</label>
-                      <Input
-                        type="text"
-                        value={nominee.name}
-                        onChange={(e) =>
-                          setNominees((prev) =>
-                            prev.map((item, idx) => (idx === index ? { ...item, name: e.target.value } : item))
-                          )
-                        }
-                        className={`enterprise-input ${showErrors && !nominee.name ? "error" : ""} ${
-                          nominee.nameLocked ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
-                        }`}
-                        placeholder="Enter full name"
-                        readOnly={nominee.nameLocked}
-                        disabled={nominee.nameLocked}
-                      />
-                    </div>
-                  <div>
-                    <label className="form-label">Nominee Date of Birth *</label>
-                    <Input
-                      type="date"
-                        value={nominee.dob}
-                        onChange={(e) =>
-                          setNominees((prev) =>
-                            prev.map((item, idx) => (idx === index ? { ...item, dob: e.target.value } : item))
-                          )
-                        }
-                      className={`enterprise-input ${showErrors && !nominee.dob ? "error" : ""}`}
-                    />
-                    </div>
-                  </div>
-
-                  {nomineeIsMinor && (
-                    <div className="rounded-[var(--radius-lg)] border border-rose-100 bg-rose-50/50 p-4 space-y-3">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-gray-900">Guardian Details *</p>
-                          <p className="text-xs text-gray-600 mt-1">Nominee is under 18. Capture guardian details.</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="form-label">Guardian Full Name *</label>
-                          <Input
-                            value={nominee.guardianFullName}
-                            onChange={(e) =>
-                              setNominees((prev) =>
-                                prev.map((item, idx) => (idx === index ? { ...item, guardianFullName: e.target.value } : item))
-                              )
-                            }
-                            className={`enterprise-input ${showErrors && !nominee.guardianFullName ? "error" : ""}`}
-                            placeholder="Full name"
-                          />
-                          {showErrors && !nominee.guardianFullName && (
-                            <p className="error-text">
-                              <AlertCircle className="w-4 h-4" />
-                              Please enter guardian full name.
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="form-label">Guardian DOB *</label>
-                          <Input
-                            type="date"
-                            value={nominee.guardianDob}
-                            onChange={(e) =>
-                              setNominees((prev) =>
-                                prev.map((item, idx) => (idx === index ? { ...item, guardianDob: e.target.value } : item))
-                              )
-                            }
-                            className={`enterprise-input ${showErrors && !nominee.guardianDob ? "error" : ""}`}
-                          />
-                          {showErrors && !nominee.guardianDob && (
-                            <p className="error-text">
-                              <AlertCircle className="w-4 h-4" />
-                              Please enter guardian date of birth.
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-gray-800">Guardian Address *</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="md:col-span-2">
-                            <label className="form-label">Line 1 *</label>
-                            <Input
-                              value={nominee.guardianAddressLine1}
-                              onChange={(e) =>
-                                setNominees((prev) =>
-                                  prev.map((item, idx) =>
-                                    idx === index ? { ...item, guardianAddressLine1: e.target.value } : item
-                                  )
-                                )
-                              }
-                              className={`enterprise-input ${showErrors && !nominee.guardianAddressLine1?.trim() ? "error" : ""}`}
-                              placeholder="House/Flat, Building"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="form-label">Line 2 *</label>
-                            <Input
-                              value={nominee.guardianAddressLine2}
-                              onChange={(e) =>
-                                setNominees((prev) =>
-                                  prev.map((item, idx) =>
-                                    idx === index ? { ...item, guardianAddressLine2: e.target.value } : item
-                                  )
-                                )
-                              }
-                              className={`enterprise-input ${showErrors && !nominee.guardianAddressLine2?.trim() ? "error" : ""}`}
-                              placeholder="Street, Locality"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="form-label">Line 3</label>
-                            <Input
-                              value={nominee.guardianAddressLine3}
-                              onChange={(e) =>
-                                setNominees((prev) =>
-                                  prev.map((item, idx) =>
-                                    idx === index ? { ...item, guardianAddressLine3: e.target.value } : item
-                                  )
-                                )
-                              }
-                              className="enterprise-input"
-                              placeholder="Area, colony (optional)"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="form-label">Nearest landmark</label>
-                            <Input
-                              value={nominee.guardianAddressNearestLandmark}
-                              onChange={(e) =>
-                                setNominees((prev) =>
-                                  prev.map((item, idx) =>
-                                    idx === index ? { ...item, guardianAddressNearestLandmark: e.target.value } : item
-                                  )
-                                )
-                              }
-                              className="enterprise-input"
-                              placeholder="e.g. Near metro station, temple"
-                            />
-                          </div>
-                          <div>
-                            <label className="form-label">Pincode *</label>
-                            <Input
-                              value={nominee.guardianAddressPincode}
-                              onChange={(e) =>
-                                setNominees((prev) =>
-                                  prev.map((item, idx) => {
-                                    if (idx !== index) return item;
-                                    const nextPincode = e.target.value;
-                                    const lookup = getCityStateForPincode(nextPincode);
-                                    return {
-                                      ...item,
-                                      guardianAddressPincode: nextPincode,
-                                      guardianAddressCity: lookup?.city || item.guardianAddressCity,
-                                      guardianAddressState: lookup?.state || item.guardianAddressState,
-                                    };
-                                  })
-                                )
-                              }
-                              className={`enterprise-input ${showErrors && !nominee.guardianAddressPincode?.trim() ? "error" : ""}`}
-                              placeholder="6-digit PIN"
-                            />
-                          </div>
-                          <div>
-                            <label className="form-label">City *</label>
-                            <Input
-                              value={nominee.guardianAddressCity}
-                              onChange={(e) =>
-                                setNominees((prev) =>
-                                  prev.map((item, idx) =>
-                                    idx === index ? { ...item, guardianAddressCity: e.target.value } : item
-                                  )
-                                )
-                              }
-                              className={`enterprise-input ${showErrors && !nominee.guardianAddressCity?.trim() ? "error" : ""}`}
-                              placeholder="City"
-                            />
-                          </div>
-                          <div>
-                            <label className="form-label">State *</label>
-                            <Input
-                              value={nominee.guardianAddressState}
-                              onChange={(e) =>
-                                setNominees((prev) =>
-                                  prev.map((item, idx) =>
-                                    idx === index ? { ...item, guardianAddressState: e.target.value } : item
-                                  )
-                                )
-                              }
-                              className={`enterprise-input ${showErrors && !nominee.guardianAddressState?.trim() ? "error" : ""}`}
-                              placeholder="State"
-                            />
-                          </div>
-                        </div>
-                        {showErrors && !isGuardianAddressComplete(nominee) && (
-                          <p className="error-text">
-                            <AlertCircle className="w-4 h-4" />
-                            Please complete all required guardian address fields.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold text-gray-800">Nominee Address</p>
-                    <label className="flex items-start gap-2 text-sm text-gray-800 cursor-pointer select-none">
-                      <Checkbox
-                        checked={livesAtSameAddress}
-                        onCheckedChange={(v) => {
-                          const on = v === true;
-                          setNominees((prev) =>
-                            prev.map((item, idx) => {
-                              if (idx !== index) return item;
-                              if (on) {
-                                return {
-                                  ...item,
-                                  addressSource: "communication",
-                                  ...communicationAddressForNominee,
-                                };
-                              }
-                              return { ...item, addressSource: "custom" };
-                            })
-                          );
-                        }}
-                        className="mt-0.5 rounded-[var(--radius)] border-gray-300 data-[state=checked]:bg-[#004C8F] data-[state=checked]:border-[#004C8F]"
-                      />
-                      <span>
-                        <span className="font-semibold">Nominee lives at same address</span>
-                        <span className="block text-xs text-gray-600 font-normal mt-0.5">
-                          Uses your present address (permanent or communication, as above). Edit it only in your address
-                          section, not here.
-                        </span>
-                      </span>
-                    </label>
-                  </div>
-
-                  {livesAtSameAddress && presentAddressIsAadhaarStyle ? (
-                    <div>
-                      <label className="form-label">Address</label>
-                      <Input
-                        value={permanentAddressText}
-                        readOnly
-                        className={`enterprise-input ${readOnlyAddressClass}`}
-                        placeholder="Aadhaar address"
-                      />
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2">
-                        <label className="form-label">Line 1 *</label>
-                        <Input
-                          value={nominee.addressLine1}
-                          onChange={(e) =>
-                            setNominees((prev) =>
-                              prev.map((item, idx) => (idx === index ? { ...item, addressLine1: e.target.value } : item))
-                            )
-                          }
-                          className={`enterprise-input ${showErrors && !nominee.addressLine1 ? "error" : ""} ${
-                            addressReadOnly ? readOnlyAddressClass : ""
-                          }`}
-                          placeholder="House/Flat, Building"
-                          readOnly={addressReadOnly}
-                          disabled={addressReadOnly}
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="form-label">Line 2 *</label>
-                        <Input
-                          value={nominee.addressLine2}
-                          onChange={(e) =>
-                            setNominees((prev) =>
-                              prev.map((item, idx) => (idx === index ? { ...item, addressLine2: e.target.value } : item))
-                            )
-                          }
-                          className={`enterprise-input ${showErrors && !nominee.addressLine2 ? "error" : ""} ${
-                            addressReadOnly ? readOnlyAddressClass : ""
-                          }`}
-                          placeholder="Street, Locality"
-                          readOnly={addressReadOnly}
-                          disabled={addressReadOnly}
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="form-label">Line 3</label>
-                        <Input
-                          value={nominee.addressLine3}
-                          onChange={(e) =>
-                            setNominees((prev) =>
-                              prev.map((item, idx) => (idx === index ? { ...item, addressLine3: e.target.value } : item))
-                            )
-                          }
-                          className={`enterprise-input ${addressReadOnly ? readOnlyAddressClass : ""}`}
-                          placeholder="Area, colony (optional)"
-                          readOnly={addressReadOnly}
-                          disabled={addressReadOnly}
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="form-label">Nearest landmark</label>
-                        <Input
-                          value={nominee.addressNearestLandmark}
-                          onChange={(e) =>
-                            setNominees((prev) =>
-                              prev.map((item, idx) =>
-                                idx === index ? { ...item, addressNearestLandmark: e.target.value } : item
-                              )
-                            )
-                          }
-                          className={`enterprise-input ${addressReadOnly ? readOnlyAddressClass : ""}`}
-                          placeholder="e.g. Near metro station, temple"
-                          readOnly={addressReadOnly}
-                          disabled={addressReadOnly}
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">Pincode *</label>
-                        <Input
-                          value={nominee.addressPincode}
-                          onChange={(e) =>
-                            setNominees((prev) =>
-                              prev.map((item, idx) => {
-                                if (idx !== index) return item;
-                                const nextPincode = e.target.value;
-                                const lookup = getCityStateForPincode(nextPincode);
-                                return {
-                                  ...item,
-                                  addressPincode: nextPincode,
-                                  addressCity: lookup?.city || item.addressCity,
-                                  addressState: lookup?.state || item.addressState,
-                                };
-                              })
-                            )
-                          }
-                          className={`enterprise-input ${showErrors && !nominee.addressPincode ? "error" : ""} ${
-                            addressReadOnly ? readOnlyAddressClass : ""
-                          }`}
-                          placeholder="6-digit PIN"
-                          readOnly={addressReadOnly}
-                          disabled={addressReadOnly}
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">City *</label>
-                        <Input
-                          value={nominee.addressCity}
-                          onChange={(e) =>
-                            setNominees((prev) =>
-                              prev.map((item, idx) => (idx === index ? { ...item, addressCity: e.target.value } : item))
-                            )
-                          }
-                          className={`enterprise-input ${showErrors && !nominee.addressCity ? "error" : ""} ${
-                            addressReadOnly ? readOnlyAddressClass : ""
-                          }`}
-                          placeholder="City"
-                          readOnly={addressReadOnly}
-                          disabled={addressReadOnly}
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">State *</label>
-                        <Input
-                          value={nominee.addressState}
-                          onChange={(e) =>
-                            setNominees((prev) =>
-                              prev.map((item, idx) => (idx === index ? { ...item, addressState: e.target.value } : item))
-                            )
-                          }
-                          className={`enterprise-input ${showErrors && !nominee.addressState ? "error" : ""} ${
-                            addressReadOnly ? readOnlyAddressClass : ""
-                          }`}
-                          placeholder="State"
-                          readOnly={addressReadOnly}
-                          disabled={addressReadOnly}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {nomineeErrors && (
-                    <p className="error-text">
-                      <AlertCircle className="w-4 h-4" />
-                      Please complete nominee {index + 1} details.
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
 
         {/* Regulatory declarations (mandatory) */}
         <div className="rounded-[var(--radius-lg)] border border-gray-200 bg-white p-4 md:p-5 space-y-4">

@@ -3,6 +3,7 @@
 import StepWelcome from "@/app/components/steps/StepWelcome";
 import StepJourneySelection from "@/app/components/steps/StepJourneySelection";
 import StepCombinedDetails from "@/app/components/steps/StepCombinedDetails";
+import StepIncomeAndNominee from "@/app/components/steps/StepIncomeAndNominee";
 import StepKycChoice from "@/app/components/steps/StepKycChoice";
 import StepContactDetails from "@/app/components/steps/StepContactDetails";
 import StepKycDetails from "@/app/components/steps/StepKycDetails";
@@ -13,8 +14,6 @@ import StepPhysicalKyc from "@/app/components/steps/StepPhysicalKyc";
 import StepAccountConversion from "@/app/components/steps/StepAccountConversion";
 import StepProfessionalDetailsExpress from "@/app/components/steps/StepProfessionalDetailsExpress";
 import StepReviewApplication from "@/app/components/steps/StepReviewApplication";
-import StepIncomeDetails from "@/app/components/steps/StepIncomeDetails";
-import StepNomineeDetails from "@/app/components/steps/StepNomineeDetails";
 import StepAutoConversion from "@/app/components/steps/StepAutoConversion";
 import StepConversionVerification from "@/app/components/steps/StepConversionVerification";
 import StepEtbIncomeDeclarations from "@/app/components/steps/StepEtbIncomeDeclarations";
@@ -51,6 +50,7 @@ const BASE_STEP_TITLES: Record<string, string> = {
   ekycHandler: "e-KYC Verification",
   physicalKyc: "Physical KYC",
   profileDetails: "YOUR",
+  incomeAndNominee: "Income & Nominee",
   autoConversion: "Account Conversion",
   conversionVerification: "Verification",
   incomeDetails: "Income & Account",
@@ -79,17 +79,19 @@ export const ALL_STEPS: Record<string, Step> = {
   journeySelection: { id: "journeySelection", title: "Select Journey" },
   ...addJourneySteps("ntb", [
     "welcome",
+    "kycChoice",
     "ekycHandler",
     "profileDetails",
-    "nomineeDetails",
-    "incomeDetails",
+    "incomeAndNominee",
     "reviewApplication",
+    "videoKyc",
     "complete",
   ]),
   ...addJourneySteps("ntb-conversion", [
     "welcome",
-    "profileDetails",
     "kycChoice",
+    "profileDetails",
+    "incomeAndNominee",
     "ekycHandler",
     "physicalKyc",
     "reviewApplication",
@@ -125,16 +127,18 @@ export const STEP_COMPONENTS: Record<string, React.ComponentType> = {
   professionalDetailsExpress: StepProfessionalDetailsExpress,
 
   [makeJourneyStepId("ntb", "welcome")]: StepWelcome,
+  [makeJourneyStepId("ntb", "kycChoice")]: StepKycChoice,
   [makeJourneyStepId("ntb", "ekycHandler")]: StepEkycHandler,
   [makeJourneyStepId("ntb", "profileDetails")]: StepCombinedDetails,
-  [makeJourneyStepId("ntb", "nomineeDetails")]: StepNomineeDetails,
-  [makeJourneyStepId("ntb", "incomeDetails")]: StepIncomeDetails,
+  [makeJourneyStepId("ntb", "incomeAndNominee")]: StepIncomeAndNominee,
   [makeJourneyStepId("ntb", "reviewApplication")]: StepReviewApplication,
+  [makeJourneyStepId("ntb", "videoKyc")]: StepVideoKyc,
   [makeJourneyStepId("ntb", "complete")]: StepComplete,
 
   [makeJourneyStepId("ntb-conversion", "welcome")]: StepNtbConversionWelcome,
   [makeJourneyStepId("ntb-conversion", "profileDetails")]:
     StepNtbConversionProfileDetails,
+  [makeJourneyStepId("ntb-conversion", "incomeAndNominee")]: StepIncomeAndNominee,
   [makeJourneyStepId("ntb-conversion", "kycChoice")]:
     StepNtbConversionKycChoice,
   [makeJourneyStepId("ntb-conversion", "ekycHandler")]: StepEkycHandler,
