@@ -5,7 +5,7 @@ import { useJourney } from "@/app/context/JourneyContext";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, Loader2, Mail, MapPin, ShieldCheck, User } from "lucide-react";
+import { AlertCircle, DollarSign, Loader2, Mail, MapPin, ShieldCheck, User } from "lucide-react";
 import StepCard from "@/app/components/layout/StepCard";
 import { Checkbox } from "@/components/ui/checkbox";
 import { type AddressFields, formatAddress, getCityStateForPincode } from "@/app/components/steps/personalDetailsNomineeShared";
@@ -104,6 +104,18 @@ export default function StepCombinedDetails() {
   const [sameAsPermanentAddress, setSameAsPermanentAddress] = useState<boolean>(
     formData.sameAsPermanentAddress ?? formData.sameAsCurrentAddress ?? true
   );
+  const [incomeRange, setIncomeRange] = useState(formData.incomeRange || "");
+
+  const incomeRanges = useMemo(
+    () => [
+      { value: "0-5L", label: "Up to ₹5L" },
+      { value: "5-10L", label: "₹5L – ₹10L" },
+      { value: "10-15L", label: "₹10L – ₹15L" },
+      { value: "15-25L", label: "₹15L – ₹25L" },
+      { value: "25L+", label: "₹25L+" },
+    ],
+    []
+  );
 
   const permanentAddressText = useMemo(
     () => formData.currentAddress || formatAddress(permanentAddress),
@@ -161,7 +173,8 @@ export default function StepCombinedDetails() {
     usesPrimaryEmailForComms !== null &&
     (usesPrimaryEmailForComms || !!communicationEmail) &&
     isPermanentAddressValid &&
-    (sameAsPermanentAddress || isAddressComplete(communicationAddress));
+    (sameAsPermanentAddress || isAddressComplete(communicationAddress)) &&
+    !!incomeRange;
 
   const buildPersonalDetailsBaseline = useCallback(() => {
     const resolvedCommunicationAddress = sameAsPermanentAddress ? permanentAddressFieldsForComm : communicationAddress;
@@ -189,11 +202,13 @@ export default function StepCombinedDetails() {
       isPep,
       isIndianNational,
       isTaxResidentIndiaOnly,
+      incomeRange,
     };
   }, [
     communicationAddress,
     communicationEmail,
     fatherName,
+    incomeRange,
     isIndianNational,
     isPep,
     isTaxResidentIndiaOnly,
@@ -246,6 +261,8 @@ export default function StepCombinedDetails() {
       isPep,
       isIndianNational,
       isTaxResidentIndiaOnly,
+      incomeRange,
+      personalDetailsBaseline: buildPersonalDetailsBaseline(),
     };
     if (!isNtb) {
       nextData.permanentAddressLine1 = permanentAddress.line1;
@@ -287,6 +304,8 @@ export default function StepCombinedDetails() {
     updateFormData,
     usesPrimaryEmailForComms,
     isNtb,
+    incomeRange,
+    buildPersonalDetailsBaseline,
   ]);
 
   useEffect(() => {
@@ -527,8 +546,8 @@ export default function StepCombinedDetails() {
               <p className="text-xs text-gray-600 mt-1">Add the details required for account processing.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
+            <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-2 gap-5">
+              <div className="min-w-0">
                 <label className="form-label flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-slate-400" />
                   Country of Birth
@@ -536,7 +555,7 @@ export default function StepCombinedDetails() {
                 <Input value={COUNTRY_OF_BIRTH_DEFAULT} readOnly disabled className="enterprise-input bg-gray-100 text-gray-500 cursor-not-allowed" />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="form-label flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-slate-400" />
                   State of Birth *
@@ -561,7 +580,7 @@ export default function StepCombinedDetails() {
                 )}
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="form-label flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-slate-400" />
                   City of Birth *
@@ -581,7 +600,7 @@ export default function StepCombinedDetails() {
                 )}
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="form-label flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-slate-400" />
                   Type of Residence *
@@ -669,7 +688,7 @@ export default function StepCombinedDetails() {
                   placeholder="e.g. Near metro station, temple"
                 />
               </div>
-              <div>
+              <div className="md:col-span-2">
                 <label className="form-label">Pincode *</label>
                 <Input
                   value={permanentAddress.pincode}
@@ -687,7 +706,8 @@ export default function StepCombinedDetails() {
                   placeholder="6-digit PIN"
                 />
               </div>
-                <div>
+              <div className="md:col-span-2 grid grid-cols-2 gap-3 sm:gap-4">
+                <div className="min-w-0">
                   <label className="form-label">City *</label>
                   <Input
                     value={permanentAddress.city}
@@ -696,7 +716,7 @@ export default function StepCombinedDetails() {
                     placeholder="City"
                   />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="form-label">State *</label>
                   <Input
                     value={permanentAddress.state}
@@ -705,6 +725,7 @@ export default function StepCombinedDetails() {
                     placeholder="State"
                   />
                 </div>
+              </div>
             </div>
           )}
           {showErrors && !isPermanentAddressValid && (
@@ -769,7 +790,7 @@ export default function StepCombinedDetails() {
                     placeholder="e.g. Near metro station, temple"
                   />
                 </div>
-                <div>
+                <div className="md:col-span-2">
                   <label className="form-label">Pincode *</label>
                   <Input
                     value={communicationAddress.pincode}
@@ -787,23 +808,25 @@ export default function StepCombinedDetails() {
                     placeholder="6-digit PIN"
                   />
                 </div>
-                <div>
-                  <label className="form-label">City *</label>
-                  <Input
-                    value={communicationAddress.city}
-                    onChange={(e) => setCommunicationAddress((prev) => ({ ...prev, city: e.target.value }))}
-                    className={`enterprise-input ${showErrors && !communicationAddress.city ? "error" : ""}`}
-                    placeholder="City"
-                  />
-                </div>
-                <div>
-                  <label className="form-label">State *</label>
-                  <Input
-                    value={communicationAddress.state}
-                    onChange={(e) => setCommunicationAddress((prev) => ({ ...prev, state: e.target.value }))}
-                    className={`enterprise-input ${showErrors && !communicationAddress.state ? "error" : ""}`}
-                    placeholder="State"
-                  />
+                <div className="md:col-span-2 grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="min-w-0">
+                    <label className="form-label">City *</label>
+                    <Input
+                      value={communicationAddress.city}
+                      onChange={(e) => setCommunicationAddress((prev) => ({ ...prev, city: e.target.value }))}
+                      className={`enterprise-input ${showErrors && !communicationAddress.city ? "error" : ""}`}
+                      placeholder="City"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <label className="form-label">State *</label>
+                    <Input
+                      value={communicationAddress.state}
+                      onChange={(e) => setCommunicationAddress((prev) => ({ ...prev, state: e.target.value }))}
+                      className={`enterprise-input ${showErrors && !communicationAddress.state ? "error" : ""}`}
+                      placeholder="State"
+                    />
+                  </div>
                 </div>
               </div>
               {showErrors && !isAddressComplete(communicationAddress) && (
@@ -816,6 +839,34 @@ export default function StepCombinedDetails() {
           )}
         </div>
 
+        <div>
+          <label className="form-label flex items-center gap-2">
+            <DollarSign className="w-4 h-4 text-slate-400" />
+            Annual Income Range *
+          </label>
+          <Select value={incomeRange} onValueChange={setIncomeRange}>
+            <SelectTrigger className={`enterprise-input flex items-center justify-between max-w-full md:max-w-md ${showErrors && !incomeRange ? "error" : ""}`}>
+              <SelectValue placeholder="Select income range" />
+            </SelectTrigger>
+            <SelectContent className="rounded-[var(--radius-lg)] border-slate-200 shadow-xl p-2 bg-white">
+              {incomeRanges.map((r) => (
+                <SelectItem
+                  key={r.value}
+                  value={r.value}
+                  className="rounded-[var(--radius)] focus:bg-slate-50 text-sm font-semibold py-2 px-3"
+                >
+                  {r.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {showErrors && !incomeRange && (
+            <p className="error-text">
+              <AlertCircle className="w-4 h-4" />
+              Please select an income range.
+            </p>
+          )}
+        </div>
 
         {/* Regulatory declarations (mandatory) */}
         <div className="rounded-[var(--radius-lg)] border border-gray-200 bg-white p-4 md:p-5 space-y-4">

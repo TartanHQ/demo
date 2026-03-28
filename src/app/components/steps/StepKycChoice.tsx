@@ -2,11 +2,12 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useJourney } from "@/app/context/JourneyContext";
-import { makeJourneyStepId } from "@/app/context/stepDefinitions";
+import { makeJourneyStepId, type JourneyType } from "@/app/context/stepDefinitions";
 import { MapPin, FileText, Loader2 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import StepCard from "@/app/components/layout/StepCard";
 import { Button } from "@/app/components/ui/button";
+import AadhaarEkycForm from "@/app/components/steps/AadhaarEkycForm";
 
 export default function StepKycChoice() {
   const {
@@ -18,6 +19,7 @@ export default function StepKycChoice() {
     journeySteps,
     setBottomBarContent,
     journeyType,
+    goToStep,
   } = useJourney();
   const [selectedMethod, setSelectedMethod] = useState<string | null>(formData.kycMethod || null);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +36,26 @@ export default function StepKycChoice() {
     trackEvent('kyc_method_selected', { method });
   };
 
+  const resolvedJourneyType = useMemo((): JourneyType | null => {
+    if (journeyType) return journeyType;
+    const firstId = journeySteps[0]?.id;
+    if (firstId?.startsWith("ntb-conversion:")) return "ntb-conversion";
+    if (firstId?.startsWith("ntb:")) return "ntb";
+    return null;
+  }, [journeyType, journeySteps]);
+
+  const showInlineAadhaarEkyc = useMemo(
+    () =>
+      selectedMethod === "ekyc" &&
+      (resolvedJourneyType === "ntb" || resolvedJourneyType === "ntb-conversion"),
+    [resolvedJourneyType, selectedMethod]
+  );
+
+  const handleInlineAadhaarComplete = useCallback(() => {
+    const type = resolvedJourneyType ?? "ntb";
+    goToStep(makeJourneyStepId(type, "profileDetails"));
+  }, [goToStep, resolvedJourneyType]);
+
   const handleContinue = useCallback(() => {
     if (!selectedMethod) return;
     setIsLoading(true);
@@ -42,18 +64,33 @@ export default function StepKycChoice() {
       setIsLoading(false);
       return;
     }
+    if (showInlineAadhaarEkyc) {
+      setIsLoading(false);
+      return;
+    }
     const kycHandlerId = makeJourneyStepId(journeyType || "ntb", "ekycHandler");
-    if (!journeySteps.some(s => s.id === kycHandlerId)) {
+    if (!journeySteps.some((s) => s.id === kycHandlerId)) {
       switchToDigitalKycFlow();
     } else {
       nextStep();
     }
     setTimeout(() => setIsLoading(false), 300);
-  }, [journeySteps, nextStep, selectedMethod, switchToDigitalKycFlow, switchToPhysicalKycFlow]);
+  }, [
+    journeySteps,
+    journeyType,
+    nextStep,
+    selectedMethod,
+    showInlineAadhaarEkyc,
+    switchToDigitalKycFlow,
+    switchToPhysicalKycFlow,
+  ]);
 
   const isValid = useMemo(() => !!selectedMethod, [selectedMethod]);
 
   useEffect(() => {
+    if (showInlineAadhaarEkyc) {
+      return;
+    }
     setBottomBarContent(
       <div className="w-full flex justify-end">
         <Button
@@ -66,7 +103,7 @@ export default function StepKycChoice() {
         </Button>
       </div>
     );
-  }, [handleContinue, isLoading, isValid, setBottomBarContent]);
+  }, [handleContinue, isLoading, isValid, setBottomBarContent, showInlineAadhaarEkyc]);
 
   return (
     <StepCard maxWidth="2xl">
@@ -118,6 +155,8 @@ export default function StepKycChoice() {
             </div>
           );
         })()}
+
+        {showInlineAadhaarEkyc && <AadhaarEkycForm onComplete={handleInlineAadhaarComplete} />}
 
         {(() => {
           const isSelected = selectedMethod === "physicalKyc";
