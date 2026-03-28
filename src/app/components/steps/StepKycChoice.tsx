@@ -36,17 +36,25 @@ export default function StepKycChoice() {
     trackEvent('kyc_method_selected', { method });
   };
 
+  const resolvedJourneyType = useMemo((): JourneyType | null => {
+    if (journeyType) return journeyType;
+    const firstId = journeySteps[0]?.id;
+    if (firstId?.startsWith("ntb-conversion:")) return "ntb-conversion";
+    if (firstId?.startsWith("ntb:")) return "ntb";
+    return null;
+  }, [journeyType, journeySteps]);
+
   const showInlineAadhaarEkyc = useMemo(
     () =>
       selectedMethod === "ekyc" &&
-      (journeyType === "ntb" || journeyType === "ntb-conversion"),
-    [journeyType, selectedMethod]
+      (resolvedJourneyType === "ntb" || resolvedJourneyType === "ntb-conversion"),
+    [resolvedJourneyType, selectedMethod]
   );
 
   const handleInlineAadhaarComplete = useCallback(() => {
-    const type = journeyType || "ntb";
-    goToStep(makeJourneyStepId(type as JourneyType, "profileDetails"));
-  }, [goToStep, journeyType]);
+    const type = resolvedJourneyType ?? "ntb";
+    goToStep(makeJourneyStepId(type, "profileDetails"));
+  }, [goToStep, resolvedJourneyType]);
 
   const handleContinue = useCallback(() => {
     if (!selectedMethod) return;
