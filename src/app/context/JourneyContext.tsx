@@ -603,7 +603,18 @@ export const JourneyProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const mainJourneyIndex = journeySteps.findIndex(s => s.id === stepId);
+    let mainJourneyIndex = journeySteps.findIndex((s) => s.id === stepId);
+    // If the journey prefix in stepId does not match stored steps (e.g. journeyType was null and
+    // caller used ntb:… while steps are ntb-conversion:…), match by base step id so we update the
+    // real index instead of showing a branch overlay (which would leave index on KYC and make
+    // nextStep() go to e-KYC again).
+    if (mainJourneyIndex === -1) {
+      const baseId = stepId.includes(":") ? stepId.split(":").pop() : stepId;
+      if (baseId) {
+        mainJourneyIndex = journeySteps.findIndex((s) => s.id.endsWith(`:${baseId}`));
+      }
+    }
+
     if (mainJourneyIndex !== -1) {
       setBranchComponent(null);
       setStepHistory((prev) => [...prev, currentStepIndex]);

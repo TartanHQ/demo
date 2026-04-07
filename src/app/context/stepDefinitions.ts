@@ -50,7 +50,7 @@ const BASE_STEP_TITLES: Record<string, string> = {
   ekycHandler: "e-KYC Verification",
   physicalKyc: "Physical KYC",
   profileDetails: "YOUR",
-  incomeAndNominee: "Income & Nominee",
+  incomeAndNominee: "Nominee",
   autoConversion: "Account Conversion",
   conversionVerification: "Verification",
   incomeDetails: "Income & Account",
