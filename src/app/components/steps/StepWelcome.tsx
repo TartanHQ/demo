@@ -9,6 +9,7 @@ import { CalendarDays, CreditCard, Loader2, AlertCircle, ArrowRight, Phone, Shie
 import { trackEvent } from "@/lib/analytics";
 import StepCard from "@/app/components/layout/StepCard";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getJourneyProgress } from "@/app/context/stepDefinitions";
 
 export default function StepWelcome() {
   const { updateFormData, formData, addNotification, nextStep, setBottomBarContent, journeySteps, currentStepIndex, journeyType } = useJourney();
@@ -27,11 +28,12 @@ export default function StepWelcome() {
   const otpInputRef = useRef<HTMLInputElement | null>(null);
   const isEtbAutoConversion = journeyType === "etb";
 
-  const stepLabel = React.useMemo(() => {
-    const total = journeySteps.length || 0;
-    if (!total) return undefined;
-    return `Step ${currentStepIndex + 1} of ${total}`;
-  }, [journeySteps.length, currentStepIndex]);
+  // Welcome is a pre-journey precursor — the helper returns undefined here so
+  // the StepCard renders without a "Step X of N" pill on this screen.
+  const stepLabel = React.useMemo(
+    () => getJourneyProgress(journeySteps, currentStepIndex).label,
+    [journeySteps, currentStepIndex]
+  );
 
   useEffect(() => {
     trackEvent('page_viewed', { page: 'welcome' });

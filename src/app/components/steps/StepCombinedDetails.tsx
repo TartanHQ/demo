@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useJourney } from "@/app/context/JourneyContext";
+import { getJourneyProgress } from "@/app/context/stepDefinitions";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -331,11 +332,7 @@ export default function StepCombinedDetails() {
 
   return (
     <StepCard
-      step={(() => {
-        const total = journeySteps.length || 0;
-        if (!total) return undefined;
-        return `Step ${currentStepIndex + 1} of ${total}`;
-      })()}
+      step={getJourneyProgress(journeySteps, currentStepIndex).label}
       maxWidth="2xl"
     >
       <div className="page-header">

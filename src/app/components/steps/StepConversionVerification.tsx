@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import StepCard from "@/app/components/layout/StepCard";
 import { CheckCircle2, CreditCard, Globe } from "lucide-react";
+import { getJourneyProgress } from "@/app/context/stepDefinitions";
 
 type VerificationMethod = "debit" | "netbanking";
 
@@ -33,11 +34,10 @@ export default function StepConversionVerification() {
   const [otp, setOtp] = useState("");
   const [showErrors, setShowErrors] = useState(false);
 
-  const stepLabel = useMemo(() => {
-    const total = journeySteps.length || 0;
-    if (!total) return undefined;
-    return `Step ${currentStepIndex + 1} of ${total}`;
-  }, [journeySteps.length, currentStepIndex]);
+  const stepLabel = useMemo(
+    () => getJourneyProgress(journeySteps, currentStepIndex).label,
+    [journeySteps, currentStepIndex]
+  );
 
   const isDebitValid = cardLast4.trim().length === 4 && !!cardExpiry.trim() && !!cardPin.trim();
   const isNetbankingValid = !!netbankingId.trim();

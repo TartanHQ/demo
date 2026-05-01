@@ -16,10 +16,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type JourneyKey = "ntb" | "etb" | "etb-nk" | "ntb-no-parents";
+type JourneyKey = "ntb" | "etb" | "etb-nk" | "ntb-no-parents" | "unknown";
 
 function getJourneyCategory(journey: string): {
-    label: "NTB" | "ETB: Auto Conv." | "ETB with KYC" | "NTB - Alternate";
+    label: "NTB" | "ETB: Auto Conv." | "ETB with KYC" | "NTB - Alternate" | "-";
     className: string;
 } {
     switch (journey) {
@@ -38,6 +38,11 @@ function getJourneyCategory(journey: string): {
                 label: "ETB: Auto Conv.",
                 className: "bg-slate-50 text-slate-700 border border-slate-200",
             };
+        case "unknown":
+            return {
+                label: "-",
+                className: "bg-slate-50 text-slate-500 border border-slate-200",
+            };
         case "etb-nk":
         default:
             return {
@@ -47,11 +52,20 @@ function getJourneyCategory(journey: string): {
     }
 }
 
+// localStorage key used to surface journey-type resolutions from the journey
+// tab back into the dashboard table for "unknown" (undetermined) rows.
+const RESOLVED_JOURNEYS_KEY = "hdfcDashboard_resolvedJourneys";
+
 export default function Dashboard() {
     const [invitedEmployeeIds, setInvitedEmployeeIds] = React.useState<Record<string, boolean>>({});
+    const [resolvedJourneys, setResolvedJourneys] = React.useState<Record<string, JourneyKey>>({});
 
     const handleRefreshInvites = React.useCallback(() => {
         setInvitedEmployeeIds({});
+        setResolvedJourneys({});
+        if (typeof window !== "undefined") {
+            try { localStorage.removeItem(RESOLVED_JOURNEYS_KEY); } catch { /* ignore */ }
+        }
     }, []);
 
     const employees = [
@@ -59,6 +73,11 @@ export default function Dashboard() {
         { id: "CBS-240013", name: "Aarav Mehta", phone: "9876543210", email: "aarav.mehta@cholabusiness.example", journey: "ntb" as JourneyKey, inviteEndpoint: "/api/invites?variant=primary", dob: "1994-03-12", pan: "QWERT1234P", fatherName: "Rakesh Mehta", motherName: "Neeta Mehta", currentAddress: "Flat 12B, HSR Layout, Bengaluru 560102", income: "1450000" },
         { id: "CBS-240019", name: "Diya Sharma", phone: "9811122233", email: "diya.sharma@cholabusiness.example", journey: "etb-nk" as JourneyKey, inviteEndpoint: "/api/invites?variant=etb-nk-netbanking-only", dob: "1991-09-08", pan: "ASDFG4321K", fatherName: "Suresh Sharma", motherName: "Anita Sharma", currentAddress: "Sector 45, Gurugram 122003", income: "1900000" },
         { id: "CBS-240042", name: "Kabir Singh", phone: "9899001122", email: "kabir.singh@cholabusiness.example", journey: "etb" as JourneyKey, dob: "1989-01-23", pan: "ZXCVB6789L", fatherName: "Harjit Singh", motherName: "Manpreet Kaur", currentAddress: "Andheri East, Mumbai 400069", income: "2400000" },
+        // Journey category undetermined ("-"). The user will be asked for Name +
+        // Mobile + PAN + DOB first; the journey is then "resolved" using the
+        // hint below and the resolution flows back into this table.
+        { id: "CBS-240057", name: "Riya Kapoor", phone: "9822003344", email: "riya.kapoor@cholabusiness.example", journey: "unknown" as JourneyKey, resolvedJourneyHint: "ntb" as JourneyKey, fatherName: "Vikram Kapoor", motherName: "Sneha Kapoor", currentAddress: "Koramangala 6th Block, Bengaluru 560095", income: "2100000" },
+        { id: "CBS-240063", name: "Arjun Iyer", phone: "9833445566", email: "arjun.iyer@cholabusiness.example", journey: "unknown" as JourneyKey, resolvedJourneyHint: "etb" as JourneyKey, fatherName: "Krishnan Iyer", motherName: "Lakshmi Iyer", currentAddress: "T. Nagar, Chennai 600017", income: "1750000" },
     ];
 
     // NOTE: We intentionally do NOT persist invited state across reloads.
@@ -77,25 +96,79 @@ export default function Dashboard() {
         return () => window.removeEventListener("pageshow", onPageShow);
     }, []);
 
+    // Listen for journey-type resolutions written by an "unknown" journey tab.
+    // We use localStorage as a cross-tab channel: the journey tab writes the
+    // resolved journey for an employee id; the dashboard reflects it in the
+    // Journey Category column without requiring a manual refresh.
+    React.useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        const load = () => {
+            try {
+                const raw = localStorage.getItem(RESOLVED_JOURNEYS_KEY);
+                if (!raw) {
+                    setResolvedJourneys({});
+                    return;
+                }
+                const parsed = JSON.parse(raw) as Record<string, JourneyKey>;
+                setResolvedJourneys(parsed && typeof parsed === "object" ? parsed : {});
+            } catch {
+                setResolvedJourneys({});
+            }
+        };
+
+        load();
+        const onStorage = (e: StorageEvent) => {
+            if (e.key === RESOLVED_JOURNEYS_KEY) load();
+        };
+        window.addEventListener("storage", onStorage);
+
+        // The `storage` event fires only on other tabs. Poll occasionally so
+        // resolutions surface even if the browser delays the cross-tab event.
+        const intervalId = window.setInterval(load, 1500);
+
+        return () => {
+            window.removeEventListener("storage", onStorage);
+            window.clearInterval(intervalId);
+        };
+    }, []);
+
     const handleInvite = async (emp: (typeof employees)[number]) => {
         if (invitedEmployeeIds[emp.id]) return;
         try {
             const journeyType = emp.journey === "ntb-no-parents" ? "ntb" : emp.journey;
             const inviteEndpoint = (emp as typeof employees[number] & { inviteEndpoint?: string }).inviteEndpoint || "/api/invites";
+
+            // For "unknown" rows the user enters PAN + DOB themselves on the
+            // discovery welcome screen; we deliberately do NOT prefill those.
+            // We pass a hint that the discovery step uses to "resolve" the
+            // journey to a concrete category (etb / ntb).
+            const isUnknown = emp.journey === "unknown";
+            const empWithExtras = emp as typeof employees[number] & { resolvedJourneyHint?: JourneyKey };
+            const prefilledData: Record<string, unknown> = isUnknown
+                ? {
+                      fatherName: emp.fatherName,
+                      motherName: emp.motherName,
+                      currentAddress: emp.currentAddress,
+                      income: emp.income,
+                      resolvedJourneyHint: empWithExtras.resolvedJourneyHint || "etb",
+                  }
+                : {
+                      dob: (emp as typeof employees[number] & { dob?: string }).dob,
+                      pan: (emp as typeof employees[number] & { pan?: string }).pan,
+                      fatherName: emp.fatherName,
+                      motherName: emp.motherName,
+                      currentAddress: emp.currentAddress,
+                      income: emp.income,
+                  };
+
             const res = await fetch(inviteEndpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Accept": "application/json" },
                 body: JSON.stringify({
                     journeyType,
                     employee: { id: emp.id, name: emp.name, email: emp.email, phone: emp.phone },
-                    prefilledData: {
-                        dob: emp.dob,
-                        pan: emp.pan,
-                        fatherName: emp.fatherName,
-                        motherName: emp.motherName,
-                        currentAddress: emp.currentAddress,
-                        income: emp.income,
-                    },
+                    prefilledData,
                 }),
             });
 
@@ -218,9 +291,25 @@ export default function Dashboard() {
                                         </td>
                                         <td className="px-5 py-4">
                                             {(() => {
-                                                const meta = getJourneyCategory(emp.journey);
+                                                // For undetermined ("unknown") rows, prefer the
+                                                // resolution surfaced by the journey tab if it
+                                                // has been determined; otherwise show "-".
+                                                const effectiveJourney =
+                                                    emp.journey === "unknown" && resolvedJourneys[emp.id]
+                                                        ? resolvedJourneys[emp.id]
+                                                        : emp.journey;
+                                                const meta = getJourneyCategory(effectiveJourney);
+                                                const justResolved =
+                                                    emp.journey === "unknown" && Boolean(resolvedJourneys[emp.id]);
                                                 return (
-                                                    <span className={cn("px-2 py-1 rounded-full text-[11px] font-semibold", meta.className)}>
+                                                    <span
+                                                        className={cn(
+                                                            "px-2 py-1 rounded-full text-[11px] font-semibold",
+                                                            meta.className,
+                                                            justResolved && "ring-1 ring-emerald-200/70"
+                                                        )}
+                                                        title={justResolved ? "Journey category resolved from applicant input" : undefined}
+                                                    >
                                                         {meta.label}
                                                     </span>
                                                 );

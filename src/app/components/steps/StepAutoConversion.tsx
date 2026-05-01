@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useJourney } from "@/app/context/JourneyContext";
-import { makeJourneyStepId } from "@/app/context/stepDefinitions";
+import { getJourneyProgress, makeJourneyStepId } from "@/app/context/stepDefinitions";
 import { Button } from "@/app/components/ui/button";
 import StepCard from "@/app/components/layout/StepCard";
 import { CheckCircle2, Loader2 } from "lucide-react";
@@ -26,11 +26,10 @@ export default function StepAutoConversion() {
     formData.salaryConversionAccountId ?? null
   );
 
-  const stepLabel = useMemo(() => {
-    const total = journeySteps.length || 0;
-    if (!total) return undefined;
-    return `Step ${currentStepIndex + 1} of ${total}`;
-  }, [journeySteps.length, currentStepIndex]);
+  const stepLabel = useMemo(
+    () => getJourneyProgress(journeySteps, currentStepIndex).label,
+    [journeySteps, currentStepIndex]
+  );
 
   const accounts = useMemo(() => {
     const fromData = Array.isArray(formData.accounts) ? formData.accounts : null;

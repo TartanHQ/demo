@@ -108,6 +108,13 @@ const getInitialStepsForJourney = (journeyType: JourneyType): Step[] => {
         makeJourneyStepId("etb", "complete"),
       ];
       break;
+    case "unknown": // Discovery flow: PAN+DOB first, then journey is determined.
+      // After the first input on this welcome screen, the user is moved to the
+      // appropriate downstream journey (currently ETB: Auto Conv. step 2).
+      stepIds = [
+        makeJourneyStepId("unknown", "welcome"),
+      ];
+      break;
   }
 
   return stepIds.map(id => ALL_STEPS[id]).filter(Boolean);

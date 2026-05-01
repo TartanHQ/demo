@@ -32,9 +32,10 @@ import StepEtbNkIncomeDeclarations from "@/app/components/steps/StepEtbNkIncomeD
 import StepEtbNkConversionVerification from "@/app/components/steps/StepEtbNkConversionVerification";
 import StepNtbConversionProfileDetails from "@/app/components/steps/StepNtbConversionProfileDetails";
 import StepNtbConversionReviewApplication from "@/app/components/steps/StepNtbConversionReviewApplication";
+import StepUnknownWelcome from "@/app/components/steps/StepUnknownWelcome";
 
 export type UserType = "ntb" | "etb-nk" | "etb";
-export type JourneyType = "ntb" | "ntb-conversion" | "etb-nk" | "etb";
+export type JourneyType = "ntb" | "ntb-conversion" | "etb-nk" | "etb" | "unknown";
 
 export interface Step {
   id: string;
@@ -43,6 +44,51 @@ export interface Step {
 
 export const makeJourneyStepId = (journeyType: JourneyType, baseId: string) =>
   `${journeyType}:${baseId}`;
+
+/**
+ * The "Verify Your Identity" welcome screen of every journey is treated as a
+ * pre-journey precursor: it gates entry into the journey but is not part of
+ * the progress numbering that the user sees. This helper centralizes that
+ * exclusion so the visible step bar and per-step "Step X of N" labels stay
+ * consistent across all journeys (including branch components).
+ */
+export const isWelcomeStepId = (stepId: string | undefined | null): boolean =>
+  !!stepId && stepId.endsWith(":welcome");
+
+export interface JourneyProgress {
+  /** True when the current step is a welcome / precursor screen. */
+  isWelcome: boolean;
+  /** Total number of journey steps excluding any welcome precursors. */
+  total: number;
+  /** Zero-based index within the non-welcome portion of the journey. */
+  displayIndex: number;
+  /** Pre-formatted "Step X of N" label, or undefined when not applicable. */
+  label?: string;
+}
+
+export function getJourneyProgress(
+  journeySteps: Step[],
+  currentStepIndex: number
+): JourneyProgress {
+  const journeyOnly = journeySteps.filter((s) => !isWelcomeStepId(s?.id));
+  const total = journeyOnly.length;
+  const currentId = journeySteps[currentStepIndex]?.id;
+  const isWelcome = isWelcomeStepId(currentId);
+
+  if (isWelcome || !total) {
+    return { isWelcome, total, displayIndex: -1, label: undefined };
+  }
+  const displayIndex = journeyOnly.findIndex((s) => s.id === currentId);
+  if (displayIndex < 0) {
+    return { isWelcome: false, total, displayIndex: -1, label: undefined };
+  }
+  return {
+    isWelcome: false,
+    total,
+    displayIndex,
+    label: `Step ${displayIndex + 1} of ${total}`,
+  };
+}
 
 const BASE_STEP_TITLES: Record<string, string> = {
   welcome: "Verification",
@@ -111,6 +157,9 @@ export const ALL_STEPS: Record<string, Step> = {
     "autoConversion",
     "complete",
   ]),
+  ...addJourneySteps("unknown", [
+    "welcome",
+  ]),
   contactDetails: { id: "contactDetails", title: "YOUR" },
   kycDetails: { id: "kycDetails", title: "VKYC Consent" },
   videoKyc: { id: "videoKyc", title: "Video KYC" },
@@ -166,4 +215,6 @@ export const STEP_COMPONENTS: Record<string, React.ComponentType> = {
   [makeJourneyStepId("etb", "conversionVerification")]:
     StepConversionVerification,
   [makeJourneyStepId("etb", "complete")]: StepEtbComplete,
+
+  [makeJourneyStepId("unknown", "welcome")]: StepUnknownWelcome,
 };
