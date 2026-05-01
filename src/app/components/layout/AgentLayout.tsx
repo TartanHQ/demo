@@ -10,6 +10,7 @@ import WhitelabelModal from "../shared/WhitelabelModal";
 import { cn } from "@/lib/utils";
 import hdfcLogoPng from "../../../../assets/hdfclogo.png";
 import { Button } from "@/app/components/ui/button";
+import { isWelcomeStepId } from "@/app/context/stepDefinitions";
 
 export default function AgentLayout({ children }: { children: React.ReactNode }) {
     const { config } = useBranding();
@@ -18,13 +19,28 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
     const [isStepperGlassy, setIsStepperGlassy] = useState(false);
     const scrollRef = useRef<HTMLDivElement | null>(null);
 
+    const currentStepId = journeySteps[currentStepIndex]?.id;
+    const isOnWelcome = isWelcomeStepId(currentStepId);
+
     const showBackButton = useMemo(() => {
         if (showDashboard || currentStepIndex <= 0) return false;
-        const currentStepId = journeySteps[currentStepIndex]?.id;
-        return !String(currentStepId || "").endsWith(":complete");
-    }, [showDashboard, currentStepIndex, journeySteps]);
+        if (String(currentStepId || "").endsWith(":complete")) return false;
+        // Welcome is a pre-journey precursor — never allow navigating back into
+        // it. If every step that comes before the current one is a welcome
+        // screen, suppress the Back button.
+        const allPriorAreWelcome = journeySteps
+            .slice(0, currentStepIndex)
+            .every((s) => isWelcomeStepId(s?.id));
+        if (allPriorAreWelcome) return false;
+        return true;
+    }, [showDashboard, currentStepIndex, currentStepId, journeySteps]);
     const showBottomBar = useMemo(() => !!bottomBarContent || showBackButton, [bottomBarContent, showBackButton]);
-    const showStepper = useMemo(() => !showDashboard, [showDashboard]);
+    // Hide the stepper on the welcome precursor; the journey bar should appear
+    // only once the journey itself starts.
+    const showStepper = useMemo(
+        () => !showDashboard && !isOnWelcome,
+        [showDashboard, isOnWelcome]
+    );
 
     const handleScroll = useCallback(() => {
         const el = scrollRef.current;

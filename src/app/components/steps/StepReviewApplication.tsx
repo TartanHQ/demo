@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { useJourney } from "@/app/context/JourneyContext";
+import { getJourneyProgress } from "@/app/context/stepDefinitions";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -74,11 +75,10 @@ export default function StepReviewApplication() {
         );
     }, [isSubmitting, termsAccepted, setBottomBarContent, isNtb]);
 
-    const stepLabel = useMemo(() => {
-        const total = journeySteps.length || 0;
-        if (!total) return undefined;
-        return `Step ${currentStepIndex + 1} of ${total}`;
-    }, [journeySteps.length, currentStepIndex]);
+    const stepLabel = useMemo(
+        () => getJourneyProgress(journeySteps, currentStepIndex).label,
+        [journeySteps, currentStepIndex]
+    );
 
     const formatIncomeRange = (val: string | undefined) => {
         if (!val) return "—";

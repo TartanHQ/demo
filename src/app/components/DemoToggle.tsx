@@ -5,7 +5,7 @@
 import { useJourney } from "@/app/context/JourneyContext";
 import { JourneyType } from "@/app/context/stepDefinitions";
 import { Toggle } from "@/components/ui/toggle";
-import { CreditCard, ArrowRight, Zap } from "lucide-react";
+import { CreditCard, ArrowRight, Zap, HelpCircle } from "lucide-react";
 
 const JOURNEY_TYPES: JourneyType[] = ["ntb", "ntb-conversion", "etb-nk", "etb"];
 
@@ -14,6 +14,9 @@ const JOURNEY_DETAILS: Record<JourneyType, { label: string; icon: React.ElementT
   "ntb-conversion": { label: "Journey 1B (NTB Conversion)", icon: ArrowRight },
   "etb-nk": { label: "Journey 2 (ETB-NK)", icon: CreditCard },
   "etb": { label: "Journey 3 (ETB)", icon: Zap },
+  // The "unknown" journey is invite-only (driven from the dashboard); not part
+  // of the demo toggle cycle, but listed here to satisfy the exhaustive Record.
+  "unknown": { label: "Journey 4 (Unknown)", icon: HelpCircle },
 };
 
 export default function DemoToggle() {

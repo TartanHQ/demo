@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useJourney } from "@/app/context/JourneyContext";
-import { makeJourneyStepId } from "@/app/context/stepDefinitions";
+import { getJourneyProgress, makeJourneyStepId } from "@/app/context/stepDefinitions";
 import { Button } from "@/app/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ShieldCheck } from "lucide-react";
@@ -15,11 +15,10 @@ export default function StepEtbIncomeDeclarations() {
   const [isIndianNational, setIsIndianNational] = useState<boolean>(formData.isIndianNational !== false);
   const [isTaxResidentIndiaOnly, setIsTaxResidentIndiaOnly] = useState<boolean>(formData.isTaxResidentIndiaOnly !== false);
 
-  const stepLabel = useMemo(() => {
-    const total = journeySteps.length || 0;
-    if (!total) return undefined;
-    return `Step ${currentStepIndex + 1} of ${total}`;
-  }, [journeySteps.length, currentStepIndex]);
+  const stepLabel = useMemo(
+    () => getJourneyProgress(journeySteps, currentStepIndex).label,
+    [journeySteps, currentStepIndex]
+  );
 
   const incomeRanges = useMemo(
     () => [

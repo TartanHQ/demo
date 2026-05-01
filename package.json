@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "watch": "next dev",
+    "dev": "next dev -p 3000",
+    "watch": "next dev -p 3000",
     "build": "next build",
-    "start": "next start",
-    "preview": "next build && next start",
+    "start": "next start -p 3000",
+    "preview": "next build && next start -p 3000",
     "lint": "eslint"
   },
   "dependencies": {
